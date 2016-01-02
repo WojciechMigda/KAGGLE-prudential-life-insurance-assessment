@@ -1,6 +1,6 @@
 [submodule "Pipe"]
-	path = Pipe
+	path = src/Pipe
 	url = https://github.com/JulienPalard/Pipe
 [submodule "mlpipes"]
-	path = mlpipes
+	path = src/mlpipes
 	url = https://github.com/WojciechMigda/mlpipes
