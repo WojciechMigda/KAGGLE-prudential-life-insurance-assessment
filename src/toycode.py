@@ -46,20 +46,102 @@ import pipe as P
 
 def work():
 
-    from pypipes import as_csv_rows,unzip
-    from nppipes import as_array
-    from csv import QUOTE_NONNUMERIC as CSV_QUOTE_NONNUMERIC
+    from pypipes import unzip
+    from nppipes import genfromtxt
 
+    """
     foo = (
         '../../data/sample_submission.csv.zip'
         | unzip('sample_submission.csv')
-        | as_csv_rows(quoting=CSV_QUOTE_NONNUMERIC)
-        | P.skip(1)
-        | P.take(5)
-        #| P.as_list
-        | as_array
+        | loadtxt(delimiter=',', skiprows=1, dtype=int)
         )
     print(foo)
+    """
+
+    """
+Id
+cat     Product_Info_1-3, {1: 1-2, 3:1-38}
+cont    Product_Info_4, {0.-1.}
+cat     Product_Info_5-7, {5: 2-3, 6: 1-3, 7: 1-3}
+cont    Ins_Age {0.-1.}
+cont    Ht {0.-1.}
+cont    Wt {0.-1.}
+cont    BMI {0.-1.}
+cont    Employment_Info_1 {0.-1.}
+cat     Employment_Info_2-3 {2: 1-38, 3: 1-3}   13,14
+cont    Employment_Info_4
+cat     Employment_Info_5   16
+cont    Employment_Info_6
+cat     InsuredInfo_1-7     18,19,20,21,22,23,24
+cat     Insurance_History_1-4   25,26,27,28
+cont    Insurance_History_5
+cat     Insurance_History_7-9   30,31,32
+cat     Family_Hist_1   33
+cont    Family_Hist_2-5
+disc    Medical_History_1   38*
+cat     Medical_History_2-9     39,40,41,42,43,44,45,46
+disc    Medical_History_10
+cat     Medical_History_11-14   48,49,50,51
+disc    Medical_History_15
+cat     Medical_History_16-23   53,54,55,56,57,58,59,60
+disc    Medical_History_24
+cat     Medical_History_25-31   62,63,64,65,66,67,68
+disc    Medical_History_32
+cat     Medical_History_33-41   70,71,72,73,74,75,76,77,78
+*?      Medical_Keyword_1-48
+int     Response
+    """
+
+    train = (
+        '../../data/train.csv.zip'
+        | unzip('train.csv')
+        | genfromtxt(delimiter=',', dtype=str)
+        )
+    train_col_names = train[0]
+    train_labels = train[1:, 0]
+    X_train = train[1:, 1:-1]
+    y_train = train[1:, -1]
+
+    test = (
+        '../../data/test.csv.zip'
+        | unzip('test.csv')
+        | genfromtxt(delimiter=',', dtype=str)
+        )
+    test_col_names = test[0]
+    test_labels = test[1:, 0]
+    X_test = test[1:, 1:]
+    print(X_test)
+
+    """
+    Missing:
+    12, 15, 17, 29, 34, 35, 36, 37, 38, 47, 52, 61, 69,
+    """
+
+    from sklearn.preprocessing import LabelEncoder
+    le = LabelEncoder()
+    for fidx in [1, 2, 5, 6, 7, 14, 16, 18, 19, 20, 21, 22, 23, 24,
+                 25, 26, 27, 28, 30, 31, 32, 33, 40, 41, 42, 43, 44, 45, 46,
+                 48, 49, 50, 51, 53, 54, 55, 56, 57, 58, 59, 60,
+                 62, 63, 64, 65, 66, 67, 68, 71, 72, 73, 74, 76, 77, 78]:
+        fidx -= 1
+        X_train[:, fidx] = le.fit_transform(X_train[:, fidx])
+        X_test[:, fidx] = le.transform(X_test[:, fidx])
+        print(fidx + 1, le.classes_)
+        pass
+    for fidx in [3, 13, 39, 70, 75]:
+        fidx -= 1
+        X_train[:, fidx] = le.fit_transform(X_train[:, fidx])
+        X_test[:, fidx] = le.transform(X_test[:, fidx])
+        print(fidx + 1, le.classes_)
+        pass
+
+
+    """
+    from sklearn.preprocessing import OneHotEncoder
+    enc = OneHotEncoder()
+    enc.fit(foo)
+    print(enc.n_values_)
+    """
 
     pass
 
