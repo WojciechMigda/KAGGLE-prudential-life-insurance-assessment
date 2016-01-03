@@ -46,17 +46,10 @@ import pipe as P
 
 def work():
 
-    from pypipes import unzip
-    from nppipes import genfromtxt
+    from pypipes import unzip,as_key,del_key
+    from nppipes import genfromtxt,as_array
 
-    """
-    foo = (
-        '../../data/sample_submission.csv.zip'
-        | unzip('sample_submission.csv')
-        | loadtxt(delimiter=',', skiprows=1, dtype=int)
-        )
-    print(foo)
-    """
+
 
     """
 Id
@@ -92,25 +85,38 @@ cat     Medical_History_33-41   70,71,72,73,74,75,76,77,78
 int     Response
     """
 
-    train = (
+    def place_nans(arr):
+        from numpy import place
+        place(arr, arr == '', 'nan')
+        return arr
+
+    data = (
         '../../data/train.csv.zip'
         | unzip('train.csv')
         | genfromtxt(delimiter=',', dtype=str)
-        )
-    train_col_names = train[0]
-    train_labels = train[1:, 0]
-    X_train = train[1:, 1:-1]
-    y_train = train[1:, -1]
+        | as_key('train')
+        | as_key('train', lambda d: place_nans(d['train']))
+        | as_key('train_col_names', lambda d: __import__('numpy').core.defchararray.strip(d['train'][0], '"'))
+        | as_key('train_labels',    lambda d: d['train'][1:, 0].astype(int))
+        | as_key('train_X',         lambda d: d['train'][1:, 1:-1])
+        | as_key('train_y',         lambda d: d['train'][1:, -1].astype(int))
+        | del_key('train')
 
-    test = (
-        '../../data/test.csv.zip'
-        | unzip('test.csv')
-        | genfromtxt(delimiter=',', dtype=str)
+        | as_key('test', lambda d: next(
+                '../../data/test.csv.zip'
+                | unzip('test.csv')
+                | genfromtxt(delimiter=',', dtype=str)
+                ))
+        | as_key('test', lambda d: place_nans(d['test']))
+        | as_key('test_col_names', lambda d: __import__('numpy').core.defchararray.strip(d['test'][0], '"'))
+        | as_key('test_labels',    lambda d: d['test'][1:, 0].astype(int))
+        | as_key('test_X',         lambda d: d['test'][1:, 1:])
+        | del_key('test')
         )
-    test_col_names = test[0]
-    test_labels = test[1:, 0]
-    X_test = test[1:, 1:]
-    print(X_test)
+    data = next(data)
+    print(data.keys())
+
+    return
 
     """
     Missing:
@@ -119,6 +125,7 @@ int     Response
 
     from sklearn.preprocessing import LabelEncoder
     le = LabelEncoder()
+
     for fidx in [1, 2, 5, 6, 7, 14, 16, 18, 19, 20, 21, 22, 23, 24,
                  25, 26, 27, 28, 30, 31, 32, 33, 40, 41, 42, 43, 44, 45, 46,
                  48, 49, 50, 51, 53, 54, 55, 56, 57, 58, 59, 60,
@@ -128,9 +135,13 @@ int     Response
         X_test[:, fidx] = le.transform(X_test[:, fidx])
         print(fidx + 1, le.classes_)
         pass
-    for fidx in [3, 13, 39, 70, 75]:
+
+    for fidx, unseen in {3: [], 13: [], 39: [], 70: [], 75: ['3']}.items():
+        print(fidx, unseen)
         fidx -= 1
         X_train[:, fidx] = le.fit_transform(X_train[:, fidx])
+        from numpy import place,in1d
+        place(X_test[:, fidx], in1d(X_test[:, fidx], unseen), 'nan')
         X_test[:, fidx] = le.transform(X_test[:, fidx])
         print(fidx + 1, le.classes_)
         pass
