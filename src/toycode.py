@@ -47,8 +47,9 @@ import pipe as P
 def work():
 
     from pypipes import unzip,as_key,del_key
-    from nppipes import genfromtxt,as_array
-
+    from nppipes import genfromtxt
+    from nppipes import place
+    from numpy.core.defchararray import strip
 
 
     """
@@ -85,36 +86,39 @@ cat     Medical_History_33-41   70,71,72,73,74,75,76,77,78
 int     Response
     """
 
-    def place_nans(arr):
-        from numpy import place
-        place(arr, arr == '', 'nan')
-        return arr
 
     data = (
         '../../data/train.csv.zip'
         | unzip('train.csv')
         | genfromtxt(delimiter=',', dtype=str)
+        | place(lambda d: d == '', 'nan')
         | as_key('train')
-        | as_key('train', lambda d: place_nans(d['train']))
-        | as_key('train_col_names', lambda d: __import__('numpy').core.defchararray.strip(d['train'][0], '"'))
+        | as_key('train_col_names', lambda d: strip(d['train'][0], '"'))
         | as_key('train_labels',    lambda d: d['train'][1:, 0].astype(int))
         | as_key('train_X',         lambda d: d['train'][1:, 1:-1])
         | as_key('train_y',         lambda d: d['train'][1:, -1].astype(int))
         | del_key('train')
 
-        | as_key('test', lambda d: next(
+
+        | as_key('test', lambda d:
                 '../../data/test.csv.zip'
                 | unzip('test.csv')
                 | genfromtxt(delimiter=',', dtype=str)
-                ))
-        | as_key('test', lambda d: place_nans(d['test']))
-        | as_key('test_col_names', lambda d: __import__('numpy').core.defchararray.strip(d['test'][0], '"'))
+                | place(lambda d: d == '', 'nan')
+                | P.first
+                )
+        | as_key('test_col_names', lambda d: strip(d['test'][0], '"'))
         | as_key('test_labels',    lambda d: d['test'][1:, 0].astype(int))
         | as_key('test_X',         lambda d: d['test'][1:, 1:])
         | del_key('test')
+
+
+        | P.first
         )
-    data = next(data)
+
     print(data.keys())
+    print(data['train_col_names'])
+    print(data['train_X'][:, 16]) # 'nan'
 
     return
 
