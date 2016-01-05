@@ -46,10 +46,12 @@ import pipe as P
 
 def work():
 
-    from pypipes import unzip,as_key,del_key
+    from pypipes import unzip,as_key,del_key,getitem,setitem
     from nppipes import genfromtxt
-    from nppipes import place
+    from nppipes import place,astype
+    from nppipes import take as np_take
     from numpy.core.defchararray import strip
+    from numpy import s_
 
 
     """
@@ -86,6 +88,21 @@ cat     Medical_History_33-41   70,71,72,73,74,75,76,77,78
 int     Response
     """
 
+    @P.Pipe
+    def replace_missing_with_avg(iterable):
+        from numpy import place,isnan
+        for item in iterable:
+            for i in range(item.shape[1]):
+                #feat = item[:, i]
+                mask = isnan(item[:, i])
+                #seen = feat[mask]
+                avg = item[~mask, i].mean()
+                item[mask, i] = avg
+                #place(item[:, i], ~mask, avg)
+                pass
+            yield item
+
+    missing_cidx = [11, 14, 16, 28, 33, 34, 35, 36, 37, 46, 51, 60, 68]
 
     data = (
         '../../data/train.csv.zip'
@@ -112,6 +129,17 @@ int     Response
         | as_key('test_X',         lambda d: d['test'][1:, 1:])
         | del_key('test')
 
+        | as_key('train_X', lambda d:
+                (d['train_X'],)
+                | np_take(missing_cidx, axis=1)
+                | astype(float)
+
+                | replace_missing_with_avg
+
+                | astype(str)
+                | setitem(d['train_X'].copy(), s_[:, missing_cidx])
+                | P.first
+                )
 
         | P.first
         )
@@ -119,13 +147,10 @@ int     Response
     print(data.keys())
     print(data['train_col_names'])
     print(data['train_X'][:, 16]) # 'nan'
+    print(data['train_X'][:, 68])
+    print(data['foo'].shape)
 
     return
-
-    """
-    Missing:
-    12, 15, 17, 29, 34, 35, 36, 37, 38, 47, 52, 61, 69,
-    """
 
     from sklearn.preprocessing import LabelEncoder
     le = LabelEncoder()
