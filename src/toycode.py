@@ -48,7 +48,8 @@ def work():
 
     from pypipes import unzip,as_key,del_key,getitem,setitem
     from nppipes import genfromtxt
-    from nppipes import place,astype
+    from nppipes import place,astype,as_columns,label_encoder,fit_transform
+    from nppipes import dstack
     from nppipes import take as np_take
     from numpy.core.defchararray import strip
     from numpy import s_
@@ -89,20 +90,23 @@ int     Response
     """
 
     @P.Pipe
-    def replace_missing_with_avg(iterable):
-        from numpy import place,isnan
+    def replace_missing_with_mean(iterable):
+        from numpy import isnan
         for item in iterable:
             for i in range(item.shape[1]):
-                #feat = item[:, i]
                 mask = isnan(item[:, i])
-                #seen = feat[mask]
                 avg = item[~mask, i].mean()
                 item[mask, i] = avg
-                #place(item[:, i], ~mask, avg)
                 pass
             yield item
 
+
     missing_cidx = [11, 14, 16, 28, 33, 34, 35, 36, 37, 46, 51, 60, 68]
+    nominal_cidx = [0, 1, 2, 4, 5, 6, 12, 13, 15, 17, 18, 19, 20, 21, 22, 23,
+                 24, 25, 26, 27, 29, 30, 31, 32, 38, 39, 40, 41, 42, 43, 44, 45,
+                 47, 48, 49, 50, 52, 53, 54, 55, 56, 57, 58, 59,
+                 61, 62, 63, 64, 65, 66, 67, 69, 70, 71, 72, 73, 74, 75, 76, 77]
+
 
     data = (
         '../../data/train.csv.zip'
@@ -134,10 +138,26 @@ int     Response
                 | np_take(missing_cidx, axis=1)
                 | astype(float)
 
-                | replace_missing_with_avg
+                | replace_missing_with_mean
 
                 | astype(str)
                 | setitem(d['train_X'].copy(), s_[:, missing_cidx])
+                | P.first
+                )
+
+        | as_key('label_encoders', lambda d:
+                len(nominal_cidx)
+                | label_encoder
+                | P.as_tuple
+                )
+
+        | as_key('train_X', lambda d:
+                (d['train_X'],)
+                | np_take(nominal_cidx, axis=1)
+                | as_columns
+                | fit_transform(d['label_encoders'])
+                | dstack
+                | setitem(d['train_X'].copy(), s_[:, nominal_cidx])
                 | P.first
                 )
 
@@ -148,7 +168,13 @@ int     Response
     print(data['train_col_names'])
     print(data['train_X'][:, 16]) # 'nan'
     print(data['train_X'][:, 68])
-    print(data['foo'].shape)
+    print(len(data['label_encoders']))
+    #print(type(data['foo']))
+    #print(data['foo'].shape)
+    #print(data['train_X'][:, 1])
+    #print(data['foo'][:, 1])
+    #print(len(data['foo']))
+    #print(data['foo'][0:5])
 
     return
 
