@@ -4,7 +4,7 @@
 """
 ################################################################################
 #
-#  Copyright (c) 2015 Wojciech Migda
+#  Copyright (c) 2016 Wojciech Migda
 #  All rights reserved
 #  Distributed under the terms of the MIT license
 #
@@ -46,7 +46,7 @@ import pipe as P
 
 def work():
 
-    from pypipes import unzip,as_key,del_key,getitem,setitem,as_set
+    from pypipes import unzip,as_key,del_key,getitem,setitem
     from nppipes import (genfromtxt,
                          place,astype,as_columns,label_encoder,fit_transform,
                          dstack,transform
@@ -55,6 +55,7 @@ def work():
     from numpy.core.defchararray import strip
     from numpy import s_,mean,in1d,putmask
     from collections import Counter
+    from h5pipes import h5new
 
 
     """
@@ -213,13 +214,33 @@ int     Response
 
         | del_key('label_encoders')
 
+        | as_key('test_X', lambda d:
+                (d['test_X'],)
+                | np_take(missing_cidx, axis=1)
+                | astype(float)
+
+                | replace_missing_with(mean)
+
+                | astype(str)
+                | setitem(d['test_X'].copy(), s_[:, missing_cidx])
+                | P.first
+                )
+
         | P.first
         )
 
-    print(data.keys())
-    print(data['train_col_names'])
-    print(data['train_X'][:, 16]) # 'nan'
-    print(data['train_X'][:, 68])
+    #print(data.keys())
+
+    (
+        ('foo.h5',)
+        | h5new
+        | as_key('train_X',         lambda _: data['train_X'].astype(float))
+        | as_key('train_y',         lambda _: data['train_y'].astype(float))
+        | as_key('test_X',          lambda _: data['test_X'].astype(float))
+        | as_key('train_labels',    lambda _: data['train_labels'])
+        | as_key('test_labels',     lambda _: data['test_labels'])
+        | P.first
+    )
 
     """
     from sklearn.preprocessing import OneHotEncoder
