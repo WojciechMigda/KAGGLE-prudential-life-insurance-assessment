@@ -47,12 +47,13 @@ import pipe as P
 def work():
 
     from pypipes import unzip,as_key,del_key,getitem,setitem,as_set
-    from nppipes import genfromtxt
-    from nppipes import place,astype,as_columns,label_encoder,fit_transform
-    from nppipes import dstack,transform
+    from nppipes import (genfromtxt,
+                         place,astype,as_columns,label_encoder,fit_transform,
+                         dstack,transform
+                         )
     from nppipes import take as np_take
     from numpy.core.defchararray import strip
-    from numpy import s_,mean
+    from numpy import s_,mean,in1d,putmask
     from collections import Counter
 
 
@@ -174,31 +175,43 @@ int     Response
                 | P.first
                 )
 
-        | as_key('foo', lambda d:
+        | as_key('test_X', lambda d:
                 (d['test_X'],)
                 | np_take(unseen_nominal_cidx, axis=1)
                 | as_key('test_unseen_nominals_features')
 
                 | as_key('test_unseen_nominals', lambda d2:
-                        zip(d2['unseen_nominals_features'].T, d['label_encoders'][len(seen_nominal_cidx):])
-                        | P.select(lambda t: set(t[0]) - set(t[1].classes_))
+                        zip(d2['test_unseen_nominals_features'].T,
+                            d['label_encoders'][-len(unseen_nominal_cidx):])
+                        | P.select(lambda t: list(set(t[0]) - set(t[1].classes_)))
                         | P.as_list
                         )
 
                 | as_key('train_most_common_nominals', lambda d2:
-                        zip(d['train_X'][:, unseen_nominal_cidx].T.astype(int), d['label_encoders'][len(seen_nominal_cidx):])
+                        zip(d['train_X'][:, unseen_nominal_cidx].T.astype(int),
+                            d['label_encoders'][-len(unseen_nominal_cidx):])
                         | P.select(lambda t: t[1].inverse_transform(t[0]))
                         | P.select(lambda s: Counter(s).most_common(1)[0][0])
                         | P.as_list
                         )
 
-                | getitem('test_unseen_nominals_features')
-                | as_columns
-                | transform(d['label_encoders'][len(seen_nominal_cidx):])
+                | as_key('test_corrected_features', lambda d2:
+                        zip(d2['test_unseen_nominals_features'].copy().T,
+                            d2['test_unseen_nominals'],
+                            d2['train_most_common_nominals'])
+                        | P.select(lambda t: putmask(t[0], in1d(t[0], t[1]), t[2]) or t[0])
+                        | P.as_list
+                        | P.first
+                        )
+
+                | getitem('test_corrected_features')
+                | transform(d['label_encoders'][-len(unseen_nominal_cidx):])
                 | dstack
                 | setitem(d['test_X'].copy(), s_[:, unseen_nominal_cidx])
                 | P.first
                 )
+
+        | del_key('label_encoders')
 
         | P.first
         )
@@ -207,41 +220,6 @@ int     Response
     print(data['train_col_names'])
     print(data['train_X'][:, 16]) # 'nan'
     print(data['train_X'][:, 68])
-    print(len(data['label_encoders']))
-    print(type(data['foo']))
-    print(data['foo'].shape)
-    #print(data['train_X'][:, 1])
-    #print(data['foo'][:, 1])
-    #print(len(data['foo']))
-    #print(data['foo'][0:5])
-
-    return
-
-    from sklearn.preprocessing import LabelEncoder
-    le = LabelEncoder()
-    X_train = data['train_X']
-    X_test = data['test_X']
-
-    for fidx in [1, 2, 5, 6, 7, 14, 16, 18, 19, 20, 21, 22, 23, 24,
-                 25, 26, 27, 28, 30, 31, 32, 33, 40, 41, 42, 43, 44, 45, 46,
-                 48, 49, 50, 51, 53, 54, 55, 56, 57, 58, 59, 60,
-                 62, 63, 64, 65, 66, 67, 68, 71, 72, 73, 74, 76, 77, 78]:
-        fidx -= 1
-        X_train[:, fidx] = le.fit_transform(X_train[:, fidx])
-        X_test[:, fidx] = le.transform(X_test[:, fidx])
-        print(fidx + 1, le.classes_)
-        pass
-
-    for fidx, unseen in {3: [], 13: [], 39: [], 70: [], 75: ['3']}.items():
-        print(fidx, unseen)
-        fidx -= 1
-        X_train[:, fidx] = le.fit_transform(X_train[:, fidx])
-        from numpy import place,in1d
-        place(X_test[:, fidx], in1d(X_test[:, fidx], unseen), 'nan')
-        X_test[:, fidx] = le.transform(X_test[:, fidx])
-        print(fidx + 1, le.classes_)
-        pass
-
 
     """
     from sklearn.preprocessing import OneHotEncoder
