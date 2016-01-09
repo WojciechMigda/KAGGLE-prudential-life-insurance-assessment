@@ -55,7 +55,7 @@ def work(in_train_arch,
     from pypipes import unzip,as_key,del_key,getitem,setitem
     from nppipes import (genfromtxt,
                          place,astype,as_columns,label_encoder,fit_transform,
-                         dstack,transform
+                         transform,stack
                          )
     from nppipes import take as np_take
     from numpy.core.defchararray import strip
@@ -133,7 +133,7 @@ def work(in_train_arch,
                 | np_take(nominal_cidx, axis=1)
                 | as_columns
                 | fit_transform(d['label_encoders'])
-                | dstack
+                | stack(axis=1)
                 | setitem(d['train_X'].copy(), s_[:, nominal_cidx])
                 | P.first
                 )
@@ -143,7 +143,7 @@ def work(in_train_arch,
                 | np_take(seen_nominal_cidx, axis=1)
                 | as_columns
                 | transform(d['label_encoders'][:-len(unseen_nominal_cidx)])
-                | dstack
+                | stack(axis=1)
                 | setitem(d['test_X'].copy(), s_[:, seen_nominal_cidx])
                 | P.first
                 )
@@ -172,14 +172,15 @@ def work(in_train_arch,
                         zip(d2['test_unseen_nominals_features'].copy().T,
                             d2['test_unseen_nominals'],
                             d2['train_most_common_nominals'])
-                        | P.select(lambda t: putmask(t[0], in1d(t[0], t[1]), t[2]) or t[0])
-                        | P.as_list
+                        | P.select(lambda t: putmask(t[0], in1d(t[0], t[1]), t[2]) or t[0].T)
+                        | stack(axis=1)
                         | P.first
                         )
 
                 | getitem('test_corrected_features')
+                | as_columns
                 | transform(d['label_encoders'][-len(unseen_nominal_cidx):])
-                | dstack
+                | stack(axis=1)
                 | setitem(d['test_X'].copy(), s_[:, unseen_nominal_cidx])
                 | P.first
                 )
