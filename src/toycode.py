@@ -25,6 +25,7 @@
 #  Date         Who  Ticket     Description
 #  ----------   ---  ---------  ------------------------------------------------
 #  2016-01-02   wm              Initial version
+#  2016-01-09   wm              Playing with data
 #
 ################################################################################
 """
@@ -34,9 +35,9 @@ from __future__ import print_function
 
 DEBUG = False
 __all__ = []
-__version__ = 0.1
+__version__ = "0.0.2"
 __date__ = '2016-01-02'
-__updated__ = '2016-01-02'
+__updated__ = '2016-01-09'
 
 from sys import path as sys_path
 sys_path.insert(0, './mlpipes')
@@ -46,201 +47,6 @@ import pipe as P
 
 def work():
 
-    from pypipes import unzip,as_key,del_key,getitem,setitem
-    from nppipes import (genfromtxt,
-                         place,astype,as_columns,label_encoder,fit_transform,
-                         dstack,transform
-                         )
-    from nppipes import take as np_take
-    from numpy.core.defchararray import strip
-    from numpy import s_,mean,in1d,putmask
-    from collections import Counter
-    from h5pipes import h5new
-
-
-    """
-Id
-cat     Product_Info_1-3, {1: 1-2, 3:1-38}
-cont    Product_Info_4, {0.-1.}
-cat     Product_Info_5-7, {5: 2-3, 6: 1-3, 7: 1-3}
-cont    Ins_Age {0.-1.}
-cont    Ht {0.-1.}
-cont    Wt {0.-1.}
-cont    BMI {0.-1.}
-cont    Employment_Info_1 {0.-1.}
-cat     Employment_Info_2-3 {2: 1-38, 3: 1-3}   13,14
-cont    Employment_Info_4
-cat     Employment_Info_5   16
-cont    Employment_Info_6
-cat     InsuredInfo_1-7     18,19,20,21,22,23,24
-cat     Insurance_History_1-4   25,26,27,28
-cont    Insurance_History_5
-cat     Insurance_History_7-9   30,31,32
-cat     Family_Hist_1   33
-cont    Family_Hist_2-5
-disc    Medical_History_1   38*
-cat     Medical_History_2-9     39,40,41,42,43,44,45,46
-disc    Medical_History_10
-cat     Medical_History_11-14   48,49,50,51
-disc    Medical_History_15
-cat     Medical_History_16-23   53,54,55,56,57,58,59,60
-disc    Medical_History_24
-cat     Medical_History_25-31   62,63,64,65,66,67,68
-disc    Medical_History_32
-cat     Medical_History_33-41   70,71,72,73,74,75,76,77,78
-*?      Medical_Keyword_1-48
-int     Response
-    """
-
-    @P.Pipe
-    def replace_missing_with(iterable, ftor):
-        from numpy import isnan
-        for item in iterable:
-            for i in range(item.shape[1]):
-                mask = isnan(item[:, i])
-                value = ftor(item[~mask, i])
-                item[mask, i] = value
-                pass
-            yield item
-
-
-    missing_cidx = [11, 14, 16, 28, 33, 34, 35, 36, 37, 46, 51, 60, 68]
-    unseen_nominal_cidx = [2, 12, 38, 69, 74]
-    seen_nominal_cidx = [0, 1, 4, 5, 6, 13, 15, 17, 18, 19, 20, 21, 22, 23,
-                 24, 25, 26, 27, 29, 30, 31, 32, 39, 40, 41, 42, 43, 44, 45,
-                 47, 48, 49, 50, 52, 53, 54, 55, 56, 57, 58, 59,
-                 61, 62, 63, 64, 65, 66, 67, 70, 71, 72, 73, 75, 76, 77]
-    nominal_cidx = seen_nominal_cidx + unseen_nominal_cidx
-
-
-    data = (
-        '../../data/train.csv.zip'
-        | unzip('train.csv')
-        | genfromtxt(delimiter=',', dtype=str)
-        | place(lambda d: d == '', 'nan')
-        | as_key('train')
-        | as_key('train_col_names', lambda d: strip(d['train'][0], '"'))
-        | as_key('train_labels',    lambda d: d['train'][1:, 0].astype(int))
-        | as_key('train_X',         lambda d: d['train'][1:, 1:-1])
-        | as_key('train_y',         lambda d: d['train'][1:, -1].astype(int))
-        | del_key('train')
-
-
-        | as_key('test', lambda d:
-                '../../data/test.csv.zip'
-                | unzip('test.csv')
-                | genfromtxt(delimiter=',', dtype=str)
-                | place(lambda d: d == '', 'nan')
-                | P.first
-                )
-        | as_key('test_col_names', lambda d: strip(d['test'][0], '"'))
-        | as_key('test_labels',    lambda d: d['test'][1:, 0].astype(int))
-        | as_key('test_X',         lambda d: d['test'][1:, 1:])
-        | del_key('test')
-
-        | as_key('train_X', lambda d:
-                (d['train_X'],)
-                | np_take(missing_cidx, axis=1)
-                | astype(float)
-
-                | replace_missing_with(mean)
-
-                | astype(str)
-                | setitem(d['train_X'].copy(), s_[:, missing_cidx])
-                | P.first
-                )
-
-        | as_key('label_encoders', lambda d:
-                len(nominal_cidx)
-                | label_encoder
-                | P.as_tuple
-                )
-
-        | as_key('train_X', lambda d:
-                (d['train_X'],)
-                | np_take(nominal_cidx, axis=1)
-                | as_columns
-                | fit_transform(d['label_encoders'])
-                | dstack
-                | setitem(d['train_X'].copy(), s_[:, nominal_cidx])
-                | P.first
-                )
-
-        | as_key('test_X', lambda d:
-                (d['test_X'],)
-                | np_take(seen_nominal_cidx, axis=1)
-                | as_columns
-                | transform(d['label_encoders'][:-len(unseen_nominal_cidx)])
-                | dstack
-                | setitem(d['test_X'].copy(), s_[:, seen_nominal_cidx])
-                | P.first
-                )
-
-        | as_key('test_X', lambda d:
-                (d['test_X'],)
-                | np_take(unseen_nominal_cidx, axis=1)
-                | as_key('test_unseen_nominals_features')
-
-                | as_key('test_unseen_nominals', lambda d2:
-                        zip(d2['test_unseen_nominals_features'].T,
-                            d['label_encoders'][-len(unseen_nominal_cidx):])
-                        | P.select(lambda t: list(set(t[0]) - set(t[1].classes_)))
-                        | P.as_list
-                        )
-
-                | as_key('train_most_common_nominals', lambda d2:
-                        zip(d['train_X'][:, unseen_nominal_cidx].T.astype(int),
-                            d['label_encoders'][-len(unseen_nominal_cidx):])
-                        | P.select(lambda t: t[1].inverse_transform(t[0]))
-                        | P.select(lambda s: Counter(s).most_common(1)[0][0])
-                        | P.as_list
-                        )
-
-                | as_key('test_corrected_features', lambda d2:
-                        zip(d2['test_unseen_nominals_features'].copy().T,
-                            d2['test_unseen_nominals'],
-                            d2['train_most_common_nominals'])
-                        | P.select(lambda t: putmask(t[0], in1d(t[0], t[1]), t[2]) or t[0])
-                        | P.as_list
-                        | P.first
-                        )
-
-                | getitem('test_corrected_features')
-                | transform(d['label_encoders'][-len(unseen_nominal_cidx):])
-                | dstack
-                | setitem(d['test_X'].copy(), s_[:, unseen_nominal_cidx])
-                | P.first
-                )
-
-        | del_key('label_encoders')
-
-        | as_key('test_X', lambda d:
-                (d['test_X'],)
-                | np_take(missing_cidx, axis=1)
-                | astype(float)
-
-                | replace_missing_with(mean)
-
-                | astype(str)
-                | setitem(d['test_X'].copy(), s_[:, missing_cidx])
-                | P.first
-                )
-
-        | P.first
-        )
-
-    #print(data.keys())
-
-    (
-        ('foo.h5',)
-        | h5new
-        | as_key('train_X',         lambda _: data['train_X'].astype(float))
-        | as_key('train_y',         lambda _: data['train_y'].astype(float))
-        | as_key('test_X',          lambda _: data['test_X'].astype(float))
-        | as_key('train_labels',    lambda _: data['train_labels'])
-        | as_key('test_labels',     lambda _: data['test_labels'])
-        | P.first
-    )
 
     """
     from sklearn.preprocessing import OneHotEncoder
@@ -290,11 +96,33 @@ USAGE
 
         # Setup argument parser
         parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter)
+
         """
-        parser.add_argument("-i", "--in-csv",
-            action='store', dest="in_csv_file", default=stdin,
-            type=FileType('r'),
-            help="input CSV file name")
+        parser.add_argument("--in-train-archive",
+            action='store', dest="in_train_arch",
+            type=str,
+            help="input ZIP archive with training data")
+
+        parser.add_argument("--in-test-archive",
+            action='store', dest="in_test_arch",
+            type=str,
+            help="input ZIP archive with test data")
+
+        parser.add_argument("--in-train-csv",
+            action='store', dest="in_train_csv", default='train.csv',
+            type=str,
+            help="input CSV with training data zipped inside IN_TRAIN_ARCH")
+
+        parser.add_argument("--in-test-csv",
+            action='store', dest="in_test_csv", default='test.csv',
+            type=str,
+            help="input CSV with test data zipped inside IN_TEST_ARCH")
+
+        parser.add_argument("-o", "--out-h5",
+            action='store', dest="out_h5", default='raw-data.h5',
+            type=str,
+            help="output HDF5 filename for data")
+
         parser.add_argument("-o", "--out-csv",
             action='store', dest="out_csv_file", default=stdout,
             type=FileType('w'),
