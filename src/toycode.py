@@ -49,46 +49,84 @@ def work():
 
     from h5pipes import h5open
     from pypipes import getitem,as_key
+    from nppipes import as_array
+    from skll import kappa
 
-    (
+    data = (
         ('raw-data.h5',)
         | h5open
         | as_key('file')
         | as_key('train_X', lambda d:
             (d['file'],)
             | getitem('train_X')
+            | as_array
             | P.first
             )
         | as_key('train_y', lambda d:
             (d['file'],)
             | getitem('train_y')
+            | as_array
             | P.first
             )
         | as_key('test_X', lambda d:
             (d['file'],)
             | getitem('test_X')
+            | as_array
             | P.first
             )
         | as_key('train_labels', lambda d:
             (d['file'],)
             | getitem('train_labels')
+            | as_array
             | P.first
             )
         | as_key('test_labels', lambda d:
             (d['file'],)
             | getitem('test_labels')
+            | as_array
             | P.first
             )
-        | P.tee
+
         | P.first
     )
 
-    """
+
+    nominal_cidx = [0, 1, 2, 4, 5, 6, 12, 13, 15, 17, 18, 19, 20, 21, 22, 23,
+                 24, 25, 26, 27, 29, 30, 31, 32, 38, 39, 40, 41, 42, 43, 44, 45,
+                 47, 48, 49, 50, 52, 53, 54, 55, 56, 57, 58, 59,
+                 61, 62, 63, 64, 65, 66, 67, 69, 70, 71, 72, 73, 74, 75, 76, 77]
+
+
     from sklearn.preprocessing import OneHotEncoder
-    enc = OneHotEncoder()
-    enc.fit(foo)
-    print(enc.n_values_)
-    """
+    enc = OneHotEncoder(categorical_features=nominal_cidx, sparse=False)
+    data['train_X'] = enc.fit_transform(data['train_X'])
+    data['test_X'] = enc.transform(data['test_X'])
+
+
+    from sklearn.preprocessing import StandardScaler
+    ss = StandardScaler()
+    data['train_X'] = ss.fit_transform(data['train_X'])
+    data['test_X'] = ss.transform(data['test_X'])
+
+
+
+    from sklearn.ensemble import RandomForestClassifier
+    clf = RandomForestClassifier(random_state=1, n_estimators=10, n_jobs=1)
+    rfc = RandomForestClassifier(random_state=1, n_jobs=3)
+
+    #from sklearn.ensemble import GradientBoostingClassifier
+    #clf = GradientBoostingClassifier(n_estimators=10)
+    #from sklearn.ensemble import AdaBoostClassifier
+    #clf = AdaBoostClassifier(rfc, n_estimators=30, random_state=1)
+    #from sklearn.ensemble import ExtraTreesClassifier
+    #clf = ExtraTreesClassifier(n_jobs=3, n_estimators=50, random_state=1)
+
+    from sklearn.metrics import make_scorer
+    qwkappa = make_scorer(kappa, weights='quadratic')
+    from sklearn.cross_validation import cross_val_score
+    scores = cross_val_score(clf, data['train_X'], data['train_y'], cv=10,
+                            scoring=qwkappa, n_jobs=2)
+    print("Kappa: {:.5f} (+/- {:.5f})".format(scores.mean(), scores.std()))
 
     pass
 
