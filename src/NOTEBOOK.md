@@ -5,7 +5,7 @@ qwkappa = make_scorer(kappa, weights='quadratic')
 
 from sklearn.grid_search import GridSearchCV
 grid = GridSearchCV(estimator=clf,
-                    param_grid={'n_estimators': [10, 20, 50, 100, 200, 500]},
+                    param_grid=param_grid,
                     cv=10, scoring=qwkappa, n_jobs=2,
                     verbose=1)
 ```
@@ -13,6 +13,7 @@ grid = GridSearchCV(estimator=clf,
 ```python
 from sklearn.ensemble import RandomForestClassifier
 clf = RandomForestClassifier(random_state=1, n_estimators=10, n_jobs=1)
+param_grid={'n_estimators': [10, 20, 50, 100, 200, 500]}
 ```
 ```
 Fitting 10 folds for each of 6 candidates, totalling 60 fits
