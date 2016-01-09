@@ -47,6 +47,41 @@ import pipe as P
 
 def work():
 
+    from h5pipes import h5open
+    from pypipes import getitem,as_key
+
+    (
+        ('raw-data.h5',)
+        | h5open
+        | as_key('file')
+        | as_key('train_X', lambda d:
+            (d['file'],)
+            | getitem('train_X')
+            | P.first
+            )
+        | as_key('train_y', lambda d:
+            (d['file'],)
+            | getitem('train_y')
+            | P.first
+            )
+        | as_key('test_X', lambda d:
+            (d['file'],)
+            | getitem('test_X')
+            | P.first
+            )
+        | as_key('train_labels', lambda d:
+            (d['file'],)
+            | getitem('train_labels')
+            | P.first
+            )
+        | as_key('test_labels', lambda d:
+            (d['file'],)
+            | getitem('test_labels')
+            | P.first
+            )
+        | P.tee
+        | P.first
+    )
 
     """
     from sklearn.preprocessing import OneHotEncoder
