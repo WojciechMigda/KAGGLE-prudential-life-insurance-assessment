@@ -123,10 +123,20 @@ def work():
 
     from sklearn.metrics import make_scorer
     qwkappa = make_scorer(kappa, weights='quadratic')
-    from sklearn.cross_validation import cross_val_score
-    scores = cross_val_score(clf, data['train_X'], data['train_y'], cv=10,
-                            scoring=qwkappa, n_jobs=2)
-    print("Kappa: {:.5f} (+/- {:.5f})".format(scores.mean(), scores.std()))
+#    from sklearn.cross_validation import cross_val_score
+#    scores = cross_val_score(clf, data['train_X'], data['train_y'], cv=10,
+#                            scoring=qwkappa, n_jobs=2)
+#    print("Kappa: {:.5f} (+/- {:.5f})".format(scores.mean(), scores.std()))
+
+    from sklearn.grid_search import GridSearchCV
+    grid = GridSearchCV(estimator=clf,
+                        param_grid={'n_estimators': [10, 20, 50, 100, 200, 500]},
+                        cv=10, scoring=qwkappa, n_jobs=2,
+                        verbose=1)
+    grid.fit(data['train_X'], data['train_y'])
+    print('grid scores:', grid.grid_scores_)
+    print('best score:', grid.best_score_)
+    print('best params:', grid.best_params_)
 
     pass
 
