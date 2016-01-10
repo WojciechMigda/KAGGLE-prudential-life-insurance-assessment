@@ -109,6 +109,9 @@ def work():
     data['test_X'] = ss.transform(data['test_X'])
 
 
+#    from sklearn.neighbors import KNeighborsClassifier
+#    clf = KNeighborsClassifier(weights='uniform', n_neighbors=5)
+
 
     from sklearn.ensemble import RandomForestClassifier
     clf = RandomForestClassifier(random_state=1, n_estimators=10, n_jobs=1)
@@ -130,9 +133,12 @@ def work():
 
     from sklearn.grid_search import GridSearchCV
     grid = GridSearchCV(estimator=clf,
-                        param_grid={'n_estimators': [10, 20, 50, 100, 200, 500]},
+                        param_grid={'n_estimators': [10, 20, 50],
+                                    'criterion': ['gini', 'entropy'],
+                                    #'max_depth': [3, 4, 5, 7, 10]
+                                    },
                         cv=10, scoring=qwkappa, n_jobs=2,
-                        verbose=1)
+                        verbose=2)
     grid.fit(data['train_X'], data['train_y'])
     print('grid scores:', grid.grid_scores_)
     print('best score:', grid.best_score_)
