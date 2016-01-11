@@ -51,7 +51,7 @@ def work(in_h5,
 
     from h5pipes import h5open
     from pypipes import getitem,as_key,del_key
-    from nppipes import as_array,fit_transform,transform,fit,predict
+    from nppipes import as_array,fit_transform,transform,fit,predict,savetxt,stack
     from sklearn.preprocessing import OneHotEncoder
     from sklearn.preprocessing import StandardScaler
     from sklearn.ensemble import RandomForestClassifier
@@ -143,14 +143,16 @@ def work(in_h5,
         | P.first
     )
 
+    (
+        (data['test_labels'], data['y_hat'])
+        | stack(axis=1)
+        | savetxt(out_csv_file,
+                  delimiter=',',
+                  fmt=['%d', '%d'],
+                  header='"Id","Response"', comments='')
+        | P.first
+    )
 
-    y_hat = data['y_hat']
-
-    from numpy import savetxt
-    savetxt(out_csv_file, zip(data['test_labels'], y_hat),
-            delimiter=',',
-            fmt=['%d', '%d'],
-            header='"Id","Response"', comments='')
     return
 
 
