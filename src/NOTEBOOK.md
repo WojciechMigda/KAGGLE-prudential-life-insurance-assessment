@@ -192,7 +192,6 @@ best score: 0.54091
 best params: {'max_features': 0.1, 'n_estimators': 50, 'criterion': 'gini', 'max_depth': 50, 'min_samples_leaf': 1.0}
 ```
 
-```
 ### RandomForestRegressor
 ```python
 from sklearn.ensemble import RandomForestClassifier
