@@ -50,8 +50,17 @@ def work(in_h5,
          njobs):
 
     from h5pipes import h5open
-    from pypipes import getitem,as_key
-    from nppipes import as_array
+    from pypipes import getitem,as_key,del_key
+    from nppipes import as_array,fit_transform,transform,fit,predict
+    from sklearn.preprocessing import OneHotEncoder
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.ensemble import RandomForestClassifier
+
+
+    nominal_cidx = [0, 1, 2, 4, 5, 6, 12, 13, 15, 17, 18, 19, 20, 21, 22, 23,
+                 24, 25, 26, 27, 29, 30, 31, 32, 38, 39, 40, 41, 42, 43, 44, 45,
+                 47, 48, 49, 50, 52, 53, 54, 55, 56, 57, 58, 59,
+                 61, 62, 63, 64, 65, 66, 67, 69, 70, 71, 72, 73, 74, 75, 76, 77]
 
     data = (
         (in_h5,)
@@ -88,36 +97,54 @@ def work(in_h5,
             | P.first
             )
 
+        | as_key('one_hot', lambda _:
+            (OneHotEncoder(categorical_features=nominal_cidx, sparse=False),))
+        | as_key('train_X', lambda d:
+            (d['train_X'].copy(),)
+            | fit_transform(d['one_hot'])
+            | P.first
+            )
+        | as_key('test_X', lambda d:
+            (d['test_X'].copy(),)
+            | transform(d['one_hot'])
+            | P.first
+            )
+        | del_key('one_hot')
+
+        | as_key('std_scaler', lambda _: (StandardScaler(),))
+        | as_key('train_X', lambda d:
+            (d['train_X'].copy(),)
+            | fit_transform(d['std_scaler'])
+            | P.first
+            )
+        | as_key('test_X', lambda d:
+            (d['test_X'].copy(),)
+            | transform(d['std_scaler'])
+            | P.first
+            )
+        | del_key('std_scaler')
+
+        | as_key('RFClf', lambda d:
+            (RandomForestClassifier(random_state=1,
+                                    n_estimators=nest, n_jobs=njobs,
+                                    verbose=1,
+                                    max_features=0.1, min_samples_leaf=1.0,
+                                    max_depth=50),)
+            | fit((d['train_X'],), (d['train_y'],))
+            | P.first
+            )
+        | as_key('y_hat', lambda d:
+            (d['test_X'],)
+            | predict((d['RFClf'],))
+            | P.first
+            )
+        | del_key('RFClf')
+
         | P.first
     )
 
 
-    nominal_cidx = [0, 1, 2, 4, 5, 6, 12, 13, 15, 17, 18, 19, 20, 21, 22, 23,
-                 24, 25, 26, 27, 29, 30, 31, 32, 38, 39, 40, 41, 42, 43, 44, 45,
-                 47, 48, 49, 50, 52, 53, 54, 55, 56, 57, 58, 59,
-                 61, 62, 63, 64, 65, 66, 67, 69, 70, 71, 72, 73, 74, 75, 76, 77]
-
-
-    from sklearn.preprocessing import OneHotEncoder
-    enc = OneHotEncoder(categorical_features=nominal_cidx, sparse=False)
-    data['train_X'] = enc.fit_transform(data['train_X'])
-    data['test_X'] = enc.transform(data['test_X'])
-
-
-    from sklearn.preprocessing import StandardScaler
-    ss = StandardScaler()
-    data['train_X'] = ss.fit_transform(data['train_X'])
-    data['test_X'] = ss.transform(data['test_X'])
-
-
-    from sklearn.ensemble import RandomForestClassifier
-    clf = RandomForestClassifier(random_state=1, n_estimators=nest, n_jobs=njobs,
-                                 verbose=1,
-                                 max_features=0.1, min_samples_leaf=1.0,
-                                 max_depth=50)
-
-    clf.fit(data['train_X'], data['train_y'])
-    y_hat = clf.predict(data['test_X'])
+    y_hat = data['y_hat']
 
     from numpy import savetxt
     savetxt(out_csv_file, zip(data['test_labels'], y_hat),
