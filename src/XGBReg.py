@@ -10,10 +10,10 @@
 #
 ################################################################################
 #
-#  Filename: ETClf.py
+#  Filename: XGBReg.py
 #
 #  Decription:
-#      Simple ExtraTreesRegressor model
+#      Simple XGBoostRegressor model
 #
 #  Authors:
 #       Wojciech Migda
