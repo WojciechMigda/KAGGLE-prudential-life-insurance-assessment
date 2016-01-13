@@ -10,7 +10,7 @@
 #
 ################################################################################
 #
-#  Filename: ETClf.py
+#  Filename: ETReg.py
 #
 #  Decription:
 #      Simple ExtraTreesRegressor model

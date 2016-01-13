@@ -10,10 +10,10 @@
 #
 ################################################################################
 #
-#  Filename: RFClf.py
+#  Filename: RFReg.py
 #
 #  Decription:
-#      Simple RandomForectRegressor model
+#      Simple RandomForestRegressor model
 #
 #  Authors:
 #       Wojciech Migda

@@ -13,7 +13,7 @@
 #  Filename: RFClf.py
 #
 #  Decription:
-#      Simple RandomForectClassifier model
+#      Simple RandomForestClassifier model
 #
 #  Authors:
 #       Wojciech Migda
