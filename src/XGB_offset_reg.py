@@ -57,7 +57,6 @@ def work(out_csv_file,
     from zipfile import ZipFile
     from pandas import read_csv,factorize
     from numpy import rint,clip,savetxt,stack
-    from OptimizedOffsetRegressor import OptimizedOffsetRegressor
 
 
     train = read_csv(ZipFile("../../data/train.csv.zip", 'r').open('train.csv'))
@@ -110,8 +109,55 @@ def work(out_csv_file,
     test_X = test.drop(['Id', 'Response'], axis=1).as_matrix()
 
 
-    from xgboost import XGBRegressor
-    f_hat = XGBRegressor(
+    from sklearn.base import BaseEstimator, RegressorMixin
+    class PrudentialRegressor(BaseEstimator, RegressorMixin):
+        def __init__(self,
+                    objective='reg:linear',
+                    learning_rate=0.045,
+                    min_child_weight=50,
+                    subsample=0.8,
+                    colsample_bytree=0.7,
+                    max_depth=7,
+                    n_estimators=700,
+                    nthread=-1,
+                    seed=1,
+                    n_buckets=8,
+                    initial_offsets=[-1.5, -2.6, -3.6, -1.2, -0.8, 0.04, 0.7, 3.6],
+                    scoring=NegQWKappaScorer):
+
+            from xgboost import XGBRegressor
+            from OptimizedOffsetRegressor import OptimizedOffsetRegressor
+
+            self.xgb = XGBRegressor(
+                           objective=objective,
+                           learning_rate=learning_rate,
+                           min_child_weight=min_child_weight,
+                           subsample=subsample,
+                           colsample_bytree=colsample_bytree,
+                           max_depth=max_depth,
+                           n_estimators=n_estimators,
+                           nthread=nthread,
+                           seed=seed)
+            self.off = OptimizedOffsetRegressor(n_buckets=n_buckets,
+                           initial_offsets=initial_offsets,
+                           scoring=scoring)
+            pass
+
+        def fit(self, X, y):
+            self.xgb.fit(X, y)
+            tr_y_hat = self.xgb.predict(X)
+            print('Train score is:', -self.off.scoring(tr_y_hat, train_y))
+            self.off.fit(tr_y_hat, y)
+            print("Offsets:", self.off.offsets_)
+            return self
+
+        def predict(self, X):
+            te_y_hat = self.xgb.predict(X)
+            return self.off.predict(te_y_hat)
+        pass
+
+
+    clf = PrudentialRegressor(
         objective='reg:linear',
         learning_rate=0.045,
         min_child_weight=50,
@@ -120,22 +166,13 @@ def work(out_csv_file,
         max_depth=7,
         n_estimators=nest,
         nthread=njobs,
-        seed=1)
-    f_hat.fit(train_X, train_y)
+        seed=1,
+        n_buckets=8,
+        initial_offsets=[-1.5, -2.6, -3.6, -1.2, -0.8, 0.04, 0.7, 3.6],
+        scoring=NegQWKappaScorer)
 
-    tr_y_hat = f_hat.predict(train_X)
-    te_y_hat = f_hat.predict(test_X)
-    print('Train score is:', -NegQWKappaScorer(tr_y_hat, train_y))
-
-
-    off = OptimizedOffsetRegressor(n_buckets=8,
-                                   initial_offsets=[-1.5, -2.6, -3.6, -1.2, -0.8, 0.04, 0.7, 3.6],
-                                   scoring=NegQWKappaScorer
-                                   )
-    off.fit(tr_y_hat, train_y)
-    print("Offsets:", off.offsets_)
-
-    final_test_preds = off.predict(te_y_hat)
+    clf.fit(train_X, train_y)
+    final_test_preds = clf.predict(test_X)
     final_test_preds = rint(clip(final_test_preds, 1, 8))
 
     savetxt(out_csv_file,
