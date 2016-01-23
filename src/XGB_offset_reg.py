@@ -38,11 +38,6 @@ __version__ = "0.0.1"
 __date__ = '2016-01-22'
 __updated__ = '2016-01-22'
 
-from sys import path as sys_path
-sys_path.insert(0, './mlpipes')
-sys_path.insert(0, './Pipe')
-import pipe as P
-
 
 def Kappa(y_true, y_pred, **kwargs):
     from numpy import clip
@@ -50,16 +45,76 @@ def Kappa(y_true, y_pred, **kwargs):
     return kappa(clip(y_true, 1, 8), clip(y_pred, 1, 8), **kwargs)
 
 
-def OffsetMinimizer(args):
-    def apply_offset(data, bin_offset, sv, scorer=lambda y_hat, y: -Kappa(y, y_hat, weights='quadratic') ):
-        # data has the format of pred=0, offset_pred=1, labels=2 in the first dim
-        data[1, data[0].astype(int) == sv] = data[0, data[0].astype(int) == sv] + bin_offset
-        return scorer(data[1], data[2])
+#def OffsetMinimizer(args):
+#    def apply_offset(data, bin_offset, sv, scorer=lambda y_hat, y: -Kappa(y, y_hat, weights='quadratic') ):
+#        # data has the format of pred=0, offset_pred=1, labels=2 in the first dim
+#        data[1, data[0].astype(int) == sv] = data[0, data[0].astype(int) == sv] + bin_offset
+#        return scorer(data[1], data[2])
+#
+#    from scipy.optimize import fmin_powell
+#    j, data, offset0 = args
+#    return fmin_powell(lambda x: apply_offset(data, x, j), offset0)
 
-    from scipy.optimize import fmin_powell
-    j, data, offset0 = args
-    return fmin_powell(lambda x: apply_offset(data, x, j), offset0)
 
+from sklearn.base import BaseEstimator, RegressorMixin
+class OptimizedOffsetRegressor(BaseEstimator, RegressorMixin):
+    def __init__(self, n_jobs=-1, offset_scale=1.0, n_buckets=2, initial_offsets=None):
+        self.n_jobs = int(n_jobs)
+        self.offset_scale = float(offset_scale)
+        self.n_buckets = int(n_buckets)
+        if initial_offsets is None:
+            self.initial_offsets_ = [-0.5] * self.n_buckets
+        else:
+            self.initial_offsets_ = list(initial_offsets)
+            assert(len(self.initial_offsets_) == self.n_buckets)
+        pass
+
+
+    def __call__(self, args):
+        return self.OffsetMinimizer(args)
+
+
+    def Kappa(self, y_true, y_pred, **kwargs):
+        from numpy import clip
+        from skll import kappa
+        return kappa(clip(y_true, 1, 8), clip(y_pred, 1, 8), **kwargs)
+
+
+    def OffsetMinimizer(self, args):
+        def apply_offset(data, bin_offset, sv, scorer=lambda y_hat, y: -self.Kappa(y, y_hat, weights='quadratic') ):
+            data[1, data[0].astype(int) == sv] = data[0, data[0].astype(int) == sv] + bin_offset
+            return scorer(data[1], data[2])
+
+        from scipy.optimize import fmin_powell
+        j, data, offset0 = args
+        return fmin_powell(lambda x: apply_offset(data, x, j), offset0)
+
+
+    def fit(self, X, y):
+        from multiprocessing import Pool
+        pool = Pool(processes=None if self.n_jobs is -1 else self.n_jobs)
+
+        from numpy import vstack
+        self.data_  = vstack((X, X, y))
+        for j in range(self.n_buckets):
+            self.data_[1, self.data_[0].astype(int) == j] = self.data_[0, self.data_[0].astype(int) == j] + self.initial_offsets_[j]
+
+        from numpy import array
+        self.offsets_ = array(pool.map(self,
+                                       zip(range(self.n_buckets),
+                                           [self.data_] * self.n_buckets,
+                                           self.initial_offsets_)))
+        return self
+
+
+    def predict(self, X):
+        from numpy import vstack
+        data = vstack((X, X))
+        for j in range(self.n_buckets):
+            data[1, data[0].astype(int) == j] = data[0, data[0].astype(int) == j] + self.offsets_[j]
+        return data[1]
+
+    pass
 
 
 def work(out_csv_file,
@@ -69,9 +124,7 @@ def work(out_csv_file,
 
     from zipfile import ZipFile
     from pandas import read_csv,factorize
-    from xgboost import XGBRegressor
-    from numpy import array,vstack,rint,clip,savetxt,stack
-    from multiprocessing import Pool
+    from numpy import rint,clip,savetxt,stack
 
 
     train = read_csv(ZipFile("../../data/train.csv.zip", 'r').open('train.csv'))
@@ -124,7 +177,8 @@ def work(out_csv_file,
     test_X = test.drop(['Id', 'Response'], axis=1).as_matrix()
 
 
-    xgb_reg = XGBRegressor(
+    from xgboost import XGBRegressor
+    f_hat = XGBRegressor(
         objective='reg:linear',
         learning_rate=0.045,
         min_child_weight=50,
@@ -134,31 +188,18 @@ def work(out_csv_file,
         n_estimators=nest,
         nthread=njobs,
         seed=1)
-    xgb_reg.fit(train_X, train_y)
+    f_hat.fit(train_X, train_y)
 
-    tr_y_hat = xgb_reg.predict(train_X)
-    te_y_hat = xgb_reg.predict(test_X)
+    tr_y_hat = f_hat.predict(train_X)
+    te_y_hat = f_hat.predict(test_X)
     print('Train score is:', Kappa(train_y, tr_y_hat, weights='quadratic'))
 
+    off = OptimizedOffsetRegressor(n_buckets=8, initial_offsets=[-1.5, -2.6, -3.6, -1.2, -0.8, 0.04, 0.7, 3.6])
+    off.fit(tr_y_hat, train_y)
+    print("Offsets:", off.offsets_)
 
-    offsets0 = array([-1.5, -2.6, -3.6, -1.2, -0.8, 0.04, 0.7, 3.6])
-    data = vstack((tr_y_hat, tr_y_hat, train_y))
-    for j in range(8):
-        data[1, data[0].astype(int) == j] = data[0, data[0].astype(int) == j] + offsets0[j]
-
-    pool = Pool(processes=None if njobs is -1 else njobs)
-    print("fmin_powell with {} jobs".format(pool._processes))
-    offsets = array(pool.map(OffsetMinimizer, zip(range(8), [data] * 8, offsets0)))
-
-    print("Offsets:", offsets)
-
-    # apply offsets to test
-    data = vstack((te_y_hat, te_y_hat))
-    for j in range(8):
-        data[1, data[0].astype(int) == j] = data[0, data[0].astype(int) == j] + offsets[j]
-
-
-    final_test_preds = rint(clip(data[1], 1, 8))
+    final_test_preds = off.predict(te_y_hat)
+    final_test_preds = rint(clip(final_test_preds, 1, 8))
 
     savetxt(out_csv_file,
             stack(zip(test['Id'].values, final_test_preds), axis=1).T,
