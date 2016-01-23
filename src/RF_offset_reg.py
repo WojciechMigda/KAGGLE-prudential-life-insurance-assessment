@@ -110,17 +110,13 @@ def work(out_csv_file,
     test_X = test.drop(['Id', 'Response'], axis=1).as_matrix()
 
 
-    from xgboost import XGBRegressor
-    f_hat = XGBRegressor(
-        objective='reg:linear',
-        learning_rate=0.045,
-        min_child_weight=50,
-        subsample=0.8,
-        colsample_bytree=0.7,
-        max_depth=7,
-        n_estimators=nest,
-        nthread=njobs,
-        seed=1)
+    from sklearn.ensemble import RandomForestRegressor
+    f_hat = RandomForestRegressor(random_state=1,
+                                  n_estimators=nest, n_jobs=njobs,
+                                  verbose=1,
+                                  max_features=1.0, min_samples_leaf=1.0,
+                                  max_depth=50)
+                                  #max_depth=7)
     f_hat.fit(train_X, train_y)
 
     tr_y_hat = f_hat.predict(train_X)
@@ -188,7 +184,7 @@ USAGE
         parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter)
 
         parser.add_argument("-n", "--num-est",
-            type=int, default=700, action='store', dest="nest",
+            type=int, default=50, action='store', dest="nest",
             help="number of Random Forest estimators")
 
         parser.add_argument("-j", "--jobs",
