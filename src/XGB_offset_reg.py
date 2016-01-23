@@ -125,28 +125,42 @@ def work(out_csv_file,
                     initial_offsets=[-1.5, -2.6, -3.6, -1.2, -0.8, 0.04, 0.7, 3.6],
                     scoring=NegQWKappaScorer):
 
+            self.objective = objective
+            self.learning_rate = learning_rate
+            self.min_child_weight = min_child_weight
+            self.subsample = subsample
+            self.colsample_bytree = colsample_bytree
+            self.max_depth = max_depth
+            self.n_estimators = n_estimators
+            self.nthread = nthread
+            self.seed = seed
+            self.n_buckets = n_buckets
+            self.initial_offsets = initial_offsets
+            self.scoring = scoring
+
+            pass
+
+        def fit(self, X, y):
             from xgboost import XGBRegressor
             from OptimizedOffsetRegressor import OptimizedOffsetRegressor
 
             self.xgb = XGBRegressor(
-                           objective=objective,
-                           learning_rate=learning_rate,
-                           min_child_weight=min_child_weight,
-                           subsample=subsample,
-                           colsample_bytree=colsample_bytree,
-                           max_depth=max_depth,
-                           n_estimators=n_estimators,
-                           nthread=nthread,
-                           seed=seed)
-            self.off = OptimizedOffsetRegressor(n_buckets=n_buckets,
-                           initial_offsets=initial_offsets,
-                           scoring=scoring)
-            pass
+                           objective=self.objective,
+                           learning_rate=self.learning_rate,
+                           min_child_weight=self.min_child_weight,
+                           subsample=self.subsample,
+                           colsample_bytree=self.colsample_bytree,
+                           max_depth=self.max_depth,
+                           n_estimators=self.n_estimators,
+                           nthread=self.nthread,
+                           seed=self.seed)
+            self.off = OptimizedOffsetRegressor(n_buckets=self.n_buckets,
+                           initial_offsets=self.initial_offsets,
+                           scoring=self.scoring)
 
-        def fit(self, X, y):
             self.xgb.fit(X, y)
             tr_y_hat = self.xgb.predict(X)
-            print('Train score is:', -self.off.scoring(tr_y_hat, train_y))
+            print('Train score is:', -self.scoring(tr_y_hat, y))
             self.off.fit(tr_y_hat, y)
             print("Offsets:", self.off.offsets_)
             return self
@@ -171,15 +185,35 @@ def work(out_csv_file,
         initial_offsets=[-1.5, -2.6, -3.6, -1.2, -0.8, 0.04, 0.7, 3.6],
         scoring=NegQWKappaScorer)
 
-    clf.fit(train_X, train_y)
-    final_test_preds = clf.predict(test_X)
-    final_test_preds = rint(clip(final_test_preds, 1, 8))
 
-    savetxt(out_csv_file,
-            stack(zip(test['Id'].values, final_test_preds), axis=1).T,
-            delimiter=',',
-            fmt=['%d', '%d'],
-            header='"Id","Response"', comments='')
+    param_grid={
+                'n_estimators': [500],
+                'max_depth': [7],
+                }
+    from sklearn.metrics import make_scorer
+    qwkappa = make_scorer(Kappa, weights='quadratic')
+    from sklearn.grid_search import GridSearchCV
+    grid = GridSearchCV(estimator=clf,
+                        param_grid=param_grid,
+                        cv=3, scoring=qwkappa, n_jobs=1,
+                        verbose=1)
+    grid.fit(train_X, train_y)
+    print('grid scores:')
+    for item in grid.grid_scores_:
+        print('  {:s}'.format(item))
+    print('best score: {:.5f}'.format(grid.best_score_))
+    print('best params:', grid.best_params_)
+
+
+#    clf.fit(train_X, train_y)
+#    final_test_preds = clf.predict(test_X)
+#    final_test_preds = rint(clip(final_test_preds, 1, 8))
+#
+#    savetxt(out_csv_file,
+#            stack(zip(test['Id'].values, final_test_preds), axis=1).T,
+#            delimiter=',',
+#            fmt=['%d', '%d'],
+#            header='"Id","Response"', comments='')
 
     return
 
