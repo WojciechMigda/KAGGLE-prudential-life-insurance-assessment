@@ -138,7 +138,18 @@ def work(out_csv_file,
             self.initial_offsets = initial_offsets
             self.scoring = scoring
 
-            pass
+            return
+
+
+        def epsilon(self, Tp):
+            from numpy import finfo
+            return finfo(Tp).eps
+
+
+        def clip(self, arr):
+            from numpy import clip
+            return clip(arr, 0., self.n_buckets * (1. - self.epsilon(arr.dtype)))
+
 
         def fit(self, X, y):
             from xgboost import XGBRegressor
@@ -159,15 +170,17 @@ def work(out_csv_file,
                            scoring=self.scoring)
 
             self.xgb.fit(X, y)
-            tr_y_hat = self.xgb.predict(X)
+            tr_y_hat = self.clip(self.xgb.predict(X))
             print('Train score is:', -self.scoring(tr_y_hat, y))
             self.off.fit(tr_y_hat, y)
             print("Offsets:", self.off.offsets_)
             return self
 
+
         def predict(self, X):
-            te_y_hat = self.xgb.predict(X)
+            te_y_hat = self.clip(self.xgb.predict(X))
             return self.off.predict(te_y_hat)
+
         pass
 
 
@@ -176,7 +189,7 @@ def work(out_csv_file,
         learning_rate=0.045,
         min_child_weight=50,
         subsample=0.8,
-        colsample_bytree=0.7,
+        colsample_bytree=0.8,
         max_depth=7,
         n_estimators=nest,
         nthread=njobs,
@@ -186,34 +199,105 @@ def work(out_csv_file,
         scoring=NegQWKappaScorer)
 
 
-    param_grid={
-                'n_estimators': [500],
-                'max_depth': [7],
-                }
-    from sklearn.metrics import make_scorer
-    qwkappa = make_scorer(Kappa, weights='quadratic')
-    from sklearn.grid_search import GridSearchCV
-    grid = GridSearchCV(estimator=clf,
-                        param_grid=param_grid,
-                        cv=3, scoring=qwkappa, n_jobs=1,
-                        verbose=1)
-    grid.fit(train_X, train_y)
-    print('grid scores:')
-    for item in grid.grid_scores_:
-        print('  {:s}'.format(item))
-    print('best score: {:.5f}'.format(grid.best_score_))
-    print('best params:', grid.best_params_)
+    CrossVal=False
+    #CrossVal=True
+    if CrossVal:
+        param_grid={
+                    'n_estimators': [500],
+                    'max_depth': [7],
+                    'colsample_bytree': [0.8],
+                    'subsample': [0.8],
+                    'min_child_weight': [50],
+                    }
+        from sklearn.metrics import make_scorer
+        qwkappa = make_scorer(Kappa, weights='quadratic')
+        from sklearn.grid_search import GridSearchCV
+        grid = GridSearchCV(estimator=clf,
+                            param_grid=param_grid,
+                            cv=3, scoring=qwkappa, n_jobs=1,
+                            verbose=1,
+                            refit=False)
+        grid.fit(train_X, train_y)
+        print('grid scores:')
+        for item in grid.grid_scores_:
+            print('  {:s}'.format(item))
+        print('best score: {:.5f}'.format(grid.best_score_))
+        print('best params:', grid.best_params_)
+
+        """
+CV=3
+grid scores:
+  mean: 0.65536, std: 0.00359, params: {'n_estimators': 500, 'max_depth': 7}
+best score: 0.65536
+best params: {'n_estimators': 500, 'max_depth': 7}
+
+grid scores:
+  mean: 0.65318, std: 0.00355, params: {'n_estimators': 500, 'max_depth': 10}
+best score: 0.65318
+best params: {'n_estimators': 500, 'max_depth': 10}
+
+grid scores:
+  mean: 0.63324, std: 0.00294, params: {'n_estimators': 500, 'max_depth': 50}
+best score: 0.63324
+best params: {'n_estimators': 500, 'max_depth': 50}
+
+grid scores:
+  mean: 0.65439, std: 0.00325, params: {'n_estimators': 700, 'max_depth': 7}
+best score: 0.65439
+best params: {'n_estimators': 700, 'max_depth': 7}
+
+grid scores:
+  mean: 0.65461, std: 0.00378, params: {'n_estimators': 320, 'max_depth': 7}
+best score: 0.65461
+best params: {'n_estimators': 320, 'max_depth': 7}
+
+grid scores:
+  mean: 0.65516, std: 0.00290, params: {'n_estimators': 500, 'max_depth': 6}
+  mean: 0.65513, std: 0.00332, params: {'n_estimators': 500, 'max_depth': 8}
+best score: 0.65516
+best params: {'n_estimators': 500, 'max_depth': 6}
+
+grid scores:
+  mean: 0.65536, std: 0.00359, params: {'n_estimators': 500, 'subsample': 0.8, 'colsample_bytree': 0.7, 'max_depth': 7}
+  mean: 0.65637, std: 0.00347, params: {'n_estimators': 500, 'subsample': 0.8, 'colsample_bytree': 0.8, 'max_depth': 7}
+  mean: 0.65482, std: 0.00349, params: {'n_estimators': 500, 'subsample': 0.8, 'colsample_bytree': 0.9, 'max_depth': 7}
+  mean: 0.65374, std: 0.00339, params: {'n_estimators': 500, 'subsample': 0.8, 'colsample_bytree': 1.0, 'max_depth': 7}
+best score: 0.65637
+best params: {'n_estimators': 500, 'subsample': 0.8, 'colsample_bytree': 0.8, 'max_depth': 7}
+
+grid scores:
+  mean: 0.65565, std: 0.00325, params: {'n_estimators': 500, 'subsample': 0.8, 'colsample_bytree': 0.8, 'max_depth': 7, 'min_child_weight': 40}
+  mean: 0.65637, std: 0.00347, params: {'n_estimators': 500, 'subsample': 0.8, 'colsample_bytree': 0.8, 'max_depth': 7, 'min_child_weight': 50}
+  mean: 0.65472, std: 0.00410, params: {'n_estimators': 500, 'subsample': 0.8, 'colsample_bytree': 0.8, 'max_depth': 7, 'min_child_weight': 60}
+best score: 0.65637
+best params: {'n_estimators': 500, 'subsample': 0.8, 'colsample_bytree': 0.8, 'max_depth': 7, 'min_child_weight': 50}
 
 
-#    clf.fit(train_X, train_y)
-#    final_test_preds = clf.predict(test_X)
-#    final_test_preds = rint(clip(final_test_preds, 1, 8))
-#
-#    savetxt(out_csv_file,
-#            stack(zip(test['Id'].values, final_test_preds), axis=1).T,
-#            delimiter=',',
-#            fmt=['%d', '%d'],
-#            header='"Id","Response"', comments='')
+
+CV=5
+grid scores:
+  mean: 0.65662, std: 0.00351, params: {'n_estimators': 500, 'max_depth': 7}
+best score: 0.65662
+best params: {'n_estimators': 500, 'max_depth': 7}
+
+grid scores:
+  mean: 0.65406, std: 0.00407, params: {'n_estimators': 500, 'max_depth': 10}
+best score: 0.65406
+best params: {'n_estimators': 500, 'max_depth': 10}
+
+        """
+        pass
+
+    else:
+        clf.fit(train_X, train_y)
+        final_test_preds = clf.predict(test_X)
+        final_test_preds = rint(clip(final_test_preds, 1, 8))
+
+        savetxt(out_csv_file,
+                stack(zip(test['Id'].values, final_test_preds), axis=1).T,
+                delimiter=',',
+                fmt=['%d', '%d'],
+                header='"Id","Response"', comments='')
 
     return
 
