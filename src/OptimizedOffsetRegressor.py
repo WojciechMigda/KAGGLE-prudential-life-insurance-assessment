@@ -64,14 +64,19 @@ class OptimizedOffsetRegressor(BaseEstimator, RegressorMixin):
         return self.OffsetMinimizer_(args)
 
 
+    def apply_offset(self, data, bin_offset, sv):
+        mask = data[0].astype(int) == sv
+        data[1, mask] = data[0, mask] + bin_offset
+        return data
+
     def OffsetMinimizer_(self, args):
-        def apply_offset(data, bin_offset, sv):
-            data[1, data[0].astype(int) == sv] = data[0, data[0].astype(int) == sv] + bin_offset
+        def apply_offset_and_score(data, bin_offset, sv):
+            data = self.apply_offset(data, bin_offset, sv)
             return self.scoring(data[1], data[2])
 
         j, data, offset0 = args
         from scipy.optimize import fmin_powell
-        return fmin_powell(lambda x: apply_offset(data, x, j), offset0)
+        return fmin_powell(lambda x: apply_offset_and_score(data, x, j), offset0, disp=True)
 
 
     def fit(self, X, y):
@@ -81,13 +86,17 @@ class OptimizedOffsetRegressor(BaseEstimator, RegressorMixin):
         from numpy import vstack
         self.data_ = vstack((X, X, y))
         for j in range(self.n_buckets):
-            self.data_[1, self.data_[0].astype(int) == j] = self.data_[0, self.data_[0].astype(int) == j] + self.initial_offsets_[j]
+            self.data_ = self.apply_offset(self.data_, self.initial_offsets_[j], j)
 
         from numpy import array
         self.offsets_ = array(pool.map(self,
                                        zip(range(self.n_buckets),
                                            [self.data_] * self.n_buckets,
                                            self.initial_offsets_)))
+#        self.offsets_ = array(map(self,
+#                                       zip(range(self.n_buckets),
+#                                           [self.data_] * self.n_buckets,
+#                                           self.initial_offsets_)))
         return self
 
 
@@ -95,7 +104,7 @@ class OptimizedOffsetRegressor(BaseEstimator, RegressorMixin):
         from numpy import vstack
         data = vstack((X, X))
         for j in range(self.n_buckets):
-            data[1, data[0].astype(int) == j] = data[0, data[0].astype(int) == j] + self.offsets_[j]
+            data = self.apply_offset(data, self.offsets_[j], j)
         return data[1]
 
     pass
