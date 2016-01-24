@@ -85,6 +85,15 @@ def work(out_csv_file,
     all_data['Product_Info_2_char'] = factorize(all_data['Product_Info_2_char'])[0]
     all_data['Product_Info_2_num'] = factorize(all_data['Product_Info_2_num'])[0]
 
+    """
+    Both: 0.65576
+    BmiAge: 0.65578
+    MedCount: 0.65638
+    None: 0.65529
+    """
+#    all_data['BMI_Age'] = all_data['BMI'] * all_data['Ins_Age']
+    med_keyword_columns = all_data.columns[all_data.columns.str.startswith('Medical_Keyword_')]
+    all_data['Med_Keywords_Count'] = all_data[med_keyword_columns].sum(axis=1)
 
     print('Eliminate missing values')
     # Use -1 for any others
@@ -170,7 +179,8 @@ def work(out_csv_file,
                            scoring=self.scoring)
 
             self.xgb.fit(X, y)
-            tr_y_hat = self.clip(self.xgb.predict(X))
+            tr_y_hat = self.clip(self.xgb.predict(X,
+                                                  ntree_limit=self.xgb._Booster.best_iteration))
             print('Train score is:', -self.scoring(tr_y_hat, y))
             self.off.fit(tr_y_hat, y)
             print("Offsets:", self.off.offsets_)
@@ -178,7 +188,8 @@ def work(out_csv_file,
 
 
         def predict(self, X):
-            te_y_hat = self.clip(self.xgb.predict(X))
+            te_y_hat = self.clip(self.xgb.predict(X,
+                                                  ntree_limit=self.xgb._Booster.best_iteration))
             return self.off.predict(te_y_hat)
 
         pass
@@ -189,7 +200,7 @@ def work(out_csv_file,
         learning_rate=0.045,
         min_child_weight=50,
         subsample=0.8,
-        colsample_bytree=0.8,
+        colsample_bytree=0.7,
         max_depth=7,
         n_estimators=nest,
         nthread=njobs,
@@ -200,12 +211,12 @@ def work(out_csv_file,
 
 
     CrossVal=False
-    #CrossVal=True
+    CrossVal=True
     if CrossVal:
         param_grid={
                     'n_estimators': [500],
                     'max_depth': [7],
-                    'colsample_bytree': [0.8],
+                    'colsample_bytree': [0.7],
                     'subsample': [0.8],
                     'min_child_weight': [50],
                     }
