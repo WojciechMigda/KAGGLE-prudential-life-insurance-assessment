@@ -57,7 +57,6 @@ def work(out_csv_file,
     from zipfile import ZipFile
     from pandas import read_csv,factorize
     from numpy import rint,clip,savetxt,stack
-    from OptimizedOffsetRegressor import OptimizedOffsetRegressor
 
 
     train = read_csv(ZipFile("../../data/train.csv.zip", 'r').open('train.csv'))
@@ -110,35 +109,109 @@ def work(out_csv_file,
     test_X = test.drop(['Id', 'Response'], axis=1).as_matrix()
 
 
-    from sklearn.ensemble import RandomForestRegressor
-    f_hat = RandomForestRegressor(random_state=1,
-                                  n_estimators=nest, n_jobs=njobs,
-                                  verbose=1,
-                                  max_features=1.0, min_samples_leaf=1.0,
-                                  max_depth=50)
-                                  #max_depth=7)
-    f_hat.fit(train_X, train_y)
+    from sklearn.base import BaseEstimator, RegressorMixin
+    class PrudentialRegressor(BaseEstimator, RegressorMixin):
+        def __init__(self,
+                    max_depth=7,
+                    n_estimators=50,
+                    n_jobs=-1,
+                    random_state=1,
+                    max_features=1.0,
+                    min_samples_leaf=1.0,
+                    verbose=1,
+                    n_buckets=8,
+                    initial_offsets=[-1.5, -2.6, -3.6, -1.2, -0.8, 0.04, 0.7, 3.6],
+                    scoring=NegQWKappaScorer):
 
-    tr_y_hat = f_hat.predict(train_X)
-    te_y_hat = f_hat.predict(test_X)
-    print('Train score is:', -NegQWKappaScorer(tr_y_hat, train_y))
+            self.max_depth = max_depth
+            self.n_estimators = n_estimators
+            self.n_jobs = n_jobs
+            self.random_state = random_state
+            self.max_features = max_features
+            self.min_samples_leaf = min_samples_leaf
+            self.verbose=verbose
+
+            self.n_buckets = n_buckets
+            self.initial_offsets = initial_offsets
+            self.scoring = scoring
+
+            pass
+
+        def fit(self, X, y):
+            from sklearn.ensemble import RandomForestRegressor
+            from OptimizedOffsetRegressor import OptimizedOffsetRegressor
+
+            self.rfr = RandomForestRegressor(
+                           max_depth=self.max_depth,
+                           n_estimators=self.n_estimators,
+                           n_jobs=self.n_jobs,
+                           random_state=self.random_state,
+                           max_features=self.max_features,
+                           min_samples_leaf=self.min_samples_leaf,
+                           verbose=self.verbose)
+            self.off = OptimizedOffsetRegressor(n_buckets=self.n_buckets,
+                           initial_offsets=self.initial_offsets,
+                           scoring=self.scoring)
+
+            self.rfr.fit(X, y)
+            tr_y_hat = self.rfr.predict(X)
+            print('Train score is:', -self.scoring(tr_y_hat, y))
+            self.off.fit(tr_y_hat, y)
+            print("Offsets:", self.off.offsets_)
+            return self
+
+        def predict(self, X):
+            te_y_hat = self.rfr.predict(X)
+            return self.off.predict(te_y_hat)
+        pass
+
+    clf = PrudentialRegressor(
+        max_depth=7,
+        n_estimators=nest,
+        n_jobs=njobs,
+        random_state=1,
+        max_features=1.0,
+        min_samples_leaf=1.0,
+        verbose=1,
+        n_buckets=8,
+        initial_offsets=[-1.5, -2.6, -3.6, -1.2, -0.8, 0.04, 0.7, 3.6],
+        scoring=NegQWKappaScorer)
 
 
-    off = OptimizedOffsetRegressor(n_buckets=8,
-                                   initial_offsets=[-1.5, -2.6, -3.6, -1.2, -0.8, 0.04, 0.7, 3.6],
-                                   scoring=NegQWKappaScorer
-                                   )
-    off.fit(tr_y_hat, train_y)
-    print("Offsets:", off.offsets_)
+    CrossVal=False
+    #CrossVal=True
+    if CrossVal:
+        param_grid={
+                    'n_estimators': [40, 50, 60],
+                    'max_depth': [6, 7, 8],
+                    }
+        from sklearn.metrics import make_scorer
+        qwkappa = make_scorer(Kappa, weights='quadratic')
+        from sklearn.grid_search import GridSearchCV
+        grid = GridSearchCV(estimator=clf,
+                            param_grid=param_grid,
+                            cv=3, scoring=qwkappa, n_jobs=1,
+                            verbose=1,
+                            refit=False)
+        grid.fit(train_X, train_y)
+        print('grid scores:')
+        for item in grid.grid_scores_:
+            print('  {:s}'.format(item))
+        print('best score: {:.5f}'.format(grid.best_score_))
+        print('best params:', grid.best_params_)
 
-    final_test_preds = off.predict(te_y_hat)
-    final_test_preds = rint(clip(final_test_preds, 1, 8))
+        pass
 
-    savetxt(out_csv_file,
-            stack(zip(test['Id'].values, final_test_preds), axis=1).T,
-            delimiter=',',
-            fmt=['%d', '%d'],
-            header='"Id","Response"', comments='')
+    else:
+        clf.fit(train_X, train_y)
+        final_test_preds = clf.predict(test_X)
+        final_test_preds = rint(clip(final_test_preds, 1, 8))
+
+        savetxt(out_csv_file,
+                stack(zip(test['Id'].values, final_test_preds), axis=1).T,
+                delimiter=',',
+                fmt=['%d', '%d'],
+                header='"Id","Response"', comments='')
 
     return
 
