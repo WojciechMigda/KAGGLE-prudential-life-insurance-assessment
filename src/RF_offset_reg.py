@@ -135,7 +135,18 @@ def work(out_csv_file,
             self.initial_offsets = initial_offsets
             self.scoring = scoring
 
-            pass
+            return
+
+
+        def epsilon(self, Tp):
+            from numpy import finfo
+            return finfo(Tp).eps
+
+
+        def clip(self, arr):
+            from numpy import clip
+            return clip(arr, 0., self.n_buckets * (1. - self.epsilon(arr.dtype)))
+
 
         def fit(self, X, y):
             from sklearn.ensemble import RandomForestRegressor
@@ -154,15 +165,17 @@ def work(out_csv_file,
                            scoring=self.scoring)
 
             self.rfr.fit(X, y)
-            tr_y_hat = self.rfr.predict(X)
+            tr_y_hat = self.clip(self.rfr.predict(X))
             print('Train score is:', -self.scoring(tr_y_hat, y))
             self.off.fit(tr_y_hat, y)
             print("Offsets:", self.off.offsets_)
             return self
 
+
         def predict(self, X):
-            te_y_hat = self.rfr.predict(X)
+            te_y_hat = self.clip(self.rfr.predict(X))
             return self.off.predict(te_y_hat)
+
         pass
 
     clf = PrudentialRegressor(
@@ -179,11 +192,11 @@ def work(out_csv_file,
 
 
     CrossVal=False
-    #CrossVal=True
+    CrossVal=True
     if CrossVal:
         param_grid={
-                    'n_estimators': [40, 50, 60],
-                    'max_depth': [6, 7, 8],
+                    'n_estimators': [100],
+                    'max_depth': [15, 20, 30, 40],
                     }
         from sklearn.metrics import make_scorer
         qwkappa = make_scorer(Kappa, weights='quadratic')
@@ -200,6 +213,27 @@ def work(out_csv_file,
         print('best score: {:.5f}'.format(grid.best_score_))
         print('best params:', grid.best_params_)
 
+        """
+CV=3
+grid scores:
+  mean: 0.59014, std: 0.00513, params: {'n_estimators': 60, 'max_depth': 7}
+  mean: 0.58991, std: 0.00550, params: {'n_estimators': 100, 'max_depth': 7}
+  mean: 0.60015, std: 0.00507, params: {'n_estimators': 60, 'max_depth': 8}
+  mean: 0.60093, std: 0.00523, params: {'n_estimators': 100, 'max_depth': 8}
+  mean: 0.61423, std: 0.00421, params: {'n_estimators': 60, 'max_depth': 10}
+  mean: 0.61451, std: 0.00435, params: {'n_estimators': 100, 'max_depth': 10}
+best score: 0.61451
+best params: {'n_estimators': 100, 'max_depth': 10}
+
+grid scores:
+  mean: 0.62720, std: 0.00369, params: {'n_estimators': 100, 'max_depth': 15}
+  mean: 0.62954, std: 0.00357, params: {'n_estimators': 100, 'max_depth': 20}
+  mean: 0.62450, std: 0.00335, params: {'n_estimators': 100, 'max_depth': 30}
+  mean: 0.61914, std: 0.00270, params: {'n_estimators': 100, 'max_depth': 40}
+best score: 0.62954
+best params: {'n_estimators': 100, 'max_depth': 20}
+
+        """
         pass
 
     else:
