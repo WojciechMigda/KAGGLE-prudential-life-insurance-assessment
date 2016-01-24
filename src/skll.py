@@ -54,12 +54,12 @@ def kappa(y_true, y_pred, weights=None, allow_off_by_one=False):
                              for when building the weights matrix.
     :type allow_off_by_one: bool
     """
-    import logging
     from numpy import round as np_round
     from numpy import empty as np_empty
     from numpy import bincount,outer,count_nonzero
 
-    logger = logging.getLogger(__name__)
+#    import logging
+#    logger = logging.getLogger(__name__)
 
     # Ensure that the lists are both the same length
     assert(len(y_true) == len(y_pred))
@@ -72,13 +72,15 @@ def kappa(y_true, y_pred, weights=None, allow_off_by_one=False):
     # If it is a str that can't be typecast, then the user is
     # given a hopefully useful error message.
     # Note: numpy and python 3.3 use bankers' rounding.
-    try:
-        y_true = [int(np_round(float(y))) for y in y_true]
-        y_pred = [int(np_round(float(y))) for y in y_pred]
-    except ValueError as e:
-        logger.error("For kappa, the labels should be integers or strings "
-                     "that can be converted to ints (E.g., '4.0' or '3').")
-        raise e
+#    try:
+#        y_true = [int(np_round(float(y))) for y in y_true]
+#        y_pred = [int(np_round(float(y))) for y in y_pred]
+#    except ValueError as e:
+#        logger.error("For kappa, the labels should be integers or strings "
+#                     "that can be converted to ints (E.g., '4.0' or '3').")
+#        raise e
+    y_true = np_round(y_true).astype(int)
+    y_pred = np_round(y_pred).astype(int)
 
     # Figure out normalized expected values
     min_rating = min(min(y_true), min(y_pred))
@@ -86,8 +88,10 @@ def kappa(y_true, y_pred, weights=None, allow_off_by_one=False):
 
     # shift the values so that the lowest value is 0
     # (to support scales that include negative values)
-    y_true = [y - min_rating for y in y_true]
-    y_pred = [y - min_rating for y in y_pred]
+#    y_true = [y - min_rating for y in y_true]
+#    y_pred = [y - min_rating for y in y_pred]
+    y_true = y_true - min_rating
+    y_pred = y_pred - min_rating
 
     # Build the observed/confusion matrix
     num_ratings = max_rating - min_rating + 1
