@@ -110,5 +110,68 @@ class OptimizedOffsetRegressor(BaseEstimator, RegressorMixin):
     pass
 
 
+class DigitizedOptimizedOffsetRegressor(BaseEstimator, RegressorMixin):
+    def __init__(self,
+                 n_jobs=-1,
+                 offset_scale=1.0,
+                 n_buckets=2,
+                 initial_params=None,
+                 scoring='accuracy'):
+
+        from numpy import array
+
+        self.n_jobs = int(n_jobs)
+        self.offset_scale = float(offset_scale)
+        self.n_buckets = int(n_buckets)
+        if initial_params is None:
+            #self.initial_offsets_ = [-0.5] * self.n_buckets
+            pass
+        else:
+            self.params = array(initial_params)
+            #assert(len(self.initial_offsets_) == self.n_buckets)
+            pass
+        from sklearn.metrics import get_scorer
+        self.scoring = get_scorer(scoring)
+        pass
+
+
+    def apply_params(self, params, data):
+        from numpy import digitize
+        offsets = params[:self.n_buckets]
+        splits = [0., 1., 2., 3., 4., 5., 6., 7.]
+        response = digitize(data[0], splits) - 1
+        for i, off in enumerate(offsets):
+            mask = response == i
+            data[1, mask] = data[0, mask] + offsets[i]
+
+        return data
+
+
+    def apply_params_and_score(self, params, data):
+        data = self.apply_params(params, data)
+        return self.scoring(data[1], data[2])
+
+    def fit(self, X, y):
+        from numpy import vstack
+        data = vstack((X, X, y))
+
+        from scipy.optimize import fmin_powell
+        self.params = fmin_powell(
+            self.apply_params_and_score,
+            self.params,
+            args=(data,)
+            )
+        return self
+
+
+    def predict(self, X):
+        from numpy import vstack
+        data = vstack((X, X))
+        data = self.apply_params(self.params, data)
+        return data[1]
+
+    pass
+
+
 if __name__ == "__main__":
     pass
