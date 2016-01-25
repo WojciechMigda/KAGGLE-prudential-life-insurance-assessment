@@ -200,7 +200,7 @@ def work(out_csv_file,
 
         def fit(self, X, y):
             from xgboost import XGBRegressor
-            from OptimizedOffsetRegressor import OptimizedOffsetRegressor
+            from OptimizedOffsetRegressor import DigitizedOptimizedOffsetRegressor
 
             self.xgb = XGBRegressor(
                            objective=self.objective,
@@ -212,8 +212,8 @@ def work(out_csv_file,
                            n_estimators=self.n_estimators,
                            nthread=self.nthread,
                            seed=self.seed)
-            self.off = OptimizedOffsetRegressor(n_buckets=self.n_buckets,
-                           initial_offsets=self.initial_offsets,
+            self.off = DigitizedOptimizedOffsetRegressor(n_buckets=self.n_buckets,
+                           initial_params=self.initial_offsets,
                            scoring=self.scoring)
 
             self.xgb.fit(X, y)
@@ -221,7 +221,7 @@ def work(out_csv_file,
                                                   ntree_limit=self.xgb._Booster.best_iteration))
             print('Train score is:', -self.scoring(tr_y_hat, y))
             self.off.fit(tr_y_hat, y)
-            print("Offsets:", self.off.offsets_)
+            print("Offsets:", self.off.params)
             return self
 
 
@@ -249,7 +249,7 @@ def work(out_csv_file,
 
 
     CrossVal=False
-    CrossVal=True
+    #CrossVal=True
     if CrossVal:
         param_grid={
                     'n_estimators': [500],
