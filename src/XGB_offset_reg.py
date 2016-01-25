@@ -169,7 +169,9 @@ def work(out_csv_file,
                     nthread=-1,
                     seed=1,
                     n_buckets=8,
-                    initial_offsets=[-1.5, -2.6, -3.6, -1.2, -0.8, 0.04, 0.7, 3.6],
+                    initial_params=[-1.5, -2.6, -3.6, -1.2, -0.8, 0.04, 0.7, 3.6,
+                                    #1., 2., 3., 4., 5., 6., 7.
+                                    ],
                     scoring=NegQWKappaScorer):
 
             self.objective = objective
@@ -182,7 +184,7 @@ def work(out_csv_file,
             self.nthread = nthread
             self.seed = seed
             self.n_buckets = n_buckets
-            self.initial_offsets = initial_offsets
+            self.initial_params = initial_params
             self.scoring = scoring
 
             return
@@ -194,8 +196,9 @@ def work(out_csv_file,
 
 
         def clip(self, arr):
-            from numpy import clip
-            return clip(arr, 0., self.n_buckets * (1. - self.epsilon(arr.dtype)))
+#            from numpy import clip
+#            return clip(arr, 0., self.n_buckets * (1. - self.epsilon(arr.dtype)))
+            return arr
 
 
         def fit(self, X, y):
@@ -213,7 +216,7 @@ def work(out_csv_file,
                            nthread=self.nthread,
                            seed=self.seed)
             self.off = DigitizedOptimizedOffsetRegressor(n_buckets=self.n_buckets,
-                           initial_params=self.initial_offsets,
+                           initial_params=self.initial_params,
                            scoring=self.scoring)
 
             self.xgb.fit(X, y)
@@ -244,7 +247,9 @@ def work(out_csv_file,
         nthread=njobs,
         seed=1,
         n_buckets=8,
-        initial_offsets=[-1.5, -2.6, -3.6, -1.2, -0.8, 0.04, 0.7, 3.6],
+        initial_params=[-1.5, -2.6, -3.6, -1.2, -0.8, 0.04, 0.7, 3.6,
+                        #1., 2., 3., 4., 5., 6., 7.
+                        ],
         scoring=NegQWKappaScorer)
 
 
