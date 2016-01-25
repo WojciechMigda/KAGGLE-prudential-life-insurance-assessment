@@ -39,6 +39,40 @@ __date__ = '2016-01-22'
 __updated__ = '2016-01-22'
 
 
+NOMINALS = ['Product_Info_1', 'Product_Info_2', 'Product_Info_3',
+            'Product_Info_5', 'Product_Info_6', 'Product_Info_7',
+            'Employment_Info_2', 'Employment_Info_3', 'Employment_Info_5',
+            'InsuredInfo_1', 'InsuredInfo_2', 'InsuredInfo_3', 'InsuredInfo_4',
+            'InsuredInfo_5', 'InsuredInfo_6', 'InsuredInfo_7',
+            'Insurance_History_1', 'Insurance_History_2', 'Insurance_History_3',
+            'Insurance_History_4', 'Insurance_History_7', 'Insurance_History_8',
+            'Insurance_History_9', 'Family_Hist_1', 'Medical_History_2',
+            'Medical_History_3', 'Medical_History_4', 'Medical_History_5',
+            'Medical_History_6', 'Medical_History_7', 'Medical_History_8',
+            'Medical_History_9', 'Medical_History_11', 'Medical_History_12',
+            'Medical_History_13', 'Medical_History_14', 'Medical_History_16',
+            'Medical_History_17', 'Medical_History_18', 'Medical_History_19',
+            'Medical_History_20', 'Medical_History_21', 'Medical_History_22',
+            'Medical_History_23', 'Medical_History_25', 'Medical_History_26',
+            'Medical_History_27', 'Medical_History_28', 'Medical_History_29',
+            'Medical_History_30', 'Medical_History_31', 'Medical_History_33',
+            'Medical_History_34', 'Medical_History_35', 'Medical_History_36',
+            'Medical_History_37', 'Medical_History_38', 'Medical_History_39',
+            'Medical_History_40', 'Medical_History_41']
+
+
+def OneHot(df, colnames):
+    from pandas import get_dummies, concat
+    for col in colnames:
+        dummies = get_dummies(df[col])
+        #ndumcols = dummies.shape[1]
+        dummies.rename(columns={p: col + '_' + str(i + 1)  for i, p in enumerate(dummies.columns.values)}, inplace=True)
+        df = concat([df, dummies], axis=1)
+        pass
+    df = df.drop(colnames, axis=1)
+    return df
+
+
 def Kappa(y_true, y_pred, **kwargs):
     from numpy import clip
     from skll import kappa
@@ -94,6 +128,10 @@ def work(out_csv_file,
 #    all_data['BMI_Age'] = all_data['BMI'] * all_data['Ins_Age']
     med_keyword_columns = all_data.columns[all_data.columns.str.startswith('Medical_Keyword_')]
     all_data['Med_Keywords_Count'] = all_data[med_keyword_columns].sum(axis=1)
+
+    #all_data = OneHot(all_data, ['Employment_Info_2', 'Employment_Info_3'])
+    #all_data = OneHot(all_data, NOMINALS[:24] + ['Product_Info_2_char'] + ['Product_Info_2_num'])
+    #all_data = OneHot(all_data, NOMINALS[:24])
 
     print('Eliminate missing values')
     # Use -1 for any others
