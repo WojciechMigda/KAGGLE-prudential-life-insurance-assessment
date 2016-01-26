@@ -86,7 +86,8 @@ def NegQWKappaScorer(y_hat, y):
 def work(out_csv_file,
          nest,
          njobs,
-         nfolds):
+         nfolds,
+         minimizer):
 
 
     from zipfile import ZipFile
@@ -174,6 +175,7 @@ def work(out_csv_file,
                     initial_params=[-1.5, -2.6, -3.6, -1.2, -0.8, 0.04, 0.7, 3.6,
                                     #1., 2., 3., 4., 5., 6., 7.
                                     ],
+                    minimizer='BFGS',
                     scoring=NegQWKappaScorer):
 
             self.objective = objective
@@ -187,6 +189,7 @@ def work(out_csv_file,
             self.seed = seed
             self.n_buckets = n_buckets
             self.initial_params = initial_params
+            self.minimizer = minimizer
             self.scoring = scoring
 
             return
@@ -219,6 +222,7 @@ def work(out_csv_file,
                            seed=self.seed)
             self.off = DigitizedOptimizedOffsetRegressor(n_buckets=self.n_buckets,
                            initial_params=self.initial_params,
+                           minimizer=self.minimizer,
                            scoring=self.scoring)
 
             self.xgb.fit(X, y)
@@ -255,6 +259,7 @@ def work(out_csv_file,
             #1., 2., 3., 4., 5., 6., 7.
             #0.1
             ],
+        minimizer=minimizer,
         scoring=NegQWKappaScorer)
 
 
@@ -417,6 +422,11 @@ USAGE
             type=FileType('w'),
             help="output CSV file name")
 
+        parser.add_argument("-m", "--minimizer",
+            action='store', dest="minimizer", default='BFGS',
+            type=str,
+            help="minimizer method for scipy.optimize.minimize")
+
         """
         parser.add_argument("--in-test-csv",
             action='store', dest="in_test_csv", default='test.csv',
@@ -441,7 +451,8 @@ USAGE
         work(args.out_csv_file,
              args.nest,
              args.njobs,
-             args.nfolds)
+             args.nfolds,
+             args.minimizer)
 
 
         return 0

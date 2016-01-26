@@ -116,6 +116,7 @@ class DigitizedOptimizedOffsetRegressor(BaseEstimator, RegressorMixin):
                  offset_scale=1.0,
                  n_buckets=2,
                  initial_params=None,
+                 minimizer='BFGS',
                  scoring='accuracy'):
 
         from numpy import array
@@ -130,6 +131,7 @@ class DigitizedOptimizedOffsetRegressor(BaseEstimator, RegressorMixin):
             self.params = array(initial_params)
             #assert(len(self.initial_offsets_) == self.n_buckets)
             pass
+        self.minimizer = minimizer
         from sklearn.metrics import get_scorer
         self.scoring = get_scorer(scoring)
         pass
@@ -160,12 +162,19 @@ class DigitizedOptimizedOffsetRegressor(BaseEstimator, RegressorMixin):
         from numpy import vstack
         data = vstack((X, X, y))
 
-        from scipy.optimize import fmin_powell
-        self.params = fmin_powell(
+        from scipy.optimize import minimize,approx_fprime
+        optres = minimize(
             self.apply_params_and_score,
             self.params,
-            args=(data,)
+            args=(data,),
+            method=self.minimizer,
+            jac=lambda x, args:
+                approx_fprime(x, self.apply_params_and_score, 0.05, args),
+            tol=1e-4,
+            options={'disp': True},
             )
+        #print(optres)
+        self.params = optres.x
         return self
 
 
