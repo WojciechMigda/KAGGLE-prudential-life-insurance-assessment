@@ -85,7 +85,8 @@ def NegQWKappaScorer(y_hat, y):
 
 def work(out_csv_file,
          nest,
-         njobs):
+         njobs,
+         nfolds):
 
 
     from zipfile import ZipFile
@@ -132,6 +133,7 @@ def work(out_csv_file,
     #all_data = OneHot(all_data, ['Employment_Info_2', 'Employment_Info_3'])
     #all_data = OneHot(all_data, NOMINALS[:24] + ['Product_Info_2_char'] + ['Product_Info_2_num'])
     #all_data = OneHot(all_data, NOMINALS[:24])
+    #all_data = OneHot(all_data, ['GMM6', 'GMM17'])
 
     print('Eliminate missing values')
     # Use -1 for any others
@@ -249,13 +251,12 @@ def work(out_csv_file,
         n_buckets=8,
         initial_params=[-1.5, -2.6, -3.6, -1.2, -0.8, 0.04, 0.7, 3.6,
                         #1., 2., 3., 4., 5., 6., 7.
+                        #0.1
                         ],
         scoring=NegQWKappaScorer)
 
 
-    CrossVal=False
-    #CrossVal=True
-    if CrossVal:
+    if nfolds > 1:
         param_grid={
                     'n_estimators': [500],
                     'max_depth': [7],
@@ -268,7 +269,7 @@ def work(out_csv_file,
         from sklearn.grid_search import GridSearchCV
         grid = GridSearchCV(estimator=clf,
                             param_grid=param_grid,
-                            cv=3, scoring=qwkappa, n_jobs=1,
+                            cv=nfolds, scoring=qwkappa, n_jobs=1,
                             verbose=1,
                             refit=False)
         grid.fit(train_X, train_y)
@@ -339,6 +340,7 @@ grid scores:
 best score: 0.65406
 best params: {'n_estimators': 500, 'max_depth': 10}
 
+
         """
         pass
 
@@ -391,7 +393,7 @@ USAGE
         from argparse import ArgumentParser
         from argparse import RawDescriptionHelpFormatter
         from argparse import FileType
-        from sys import stdout,stdin
+        from sys import stdout
 
         # Setup argument parser
         parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter)
@@ -403,6 +405,10 @@ USAGE
         parser.add_argument("-j", "--jobs",
             type=int, default=-1, action='store', dest="njobs",
             help="number of jobs")
+
+        parser.add_argument("-f", "--cv-fold",
+            type=int, default=0, action='store', dest="nfold",
+            help="number of cross-validation folds")
 
         parser.add_argument("-o", "--out-csv",
             action='store', dest="out_csv_file", default=stdout,
@@ -432,7 +438,8 @@ USAGE
 
         work(args.out_csv_file,
              args.nest,
-             args.njobs)
+             args.njobs,
+             args.nfolds)
 
 
         return 0
