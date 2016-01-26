@@ -80,7 +80,7 @@ def Kappa(y_true, y_pred, **kwargs):
 
 
 def NegQWKappaScorer(y_hat, y):
-    return -Kappa(y, y_hat, weights='quadratic')
+    return -Kappa(y, y_hat, weights='quadratic', min_rating=1, max_rating=8)
 
 
 def work(out_csv_file,
@@ -249,10 +249,12 @@ def work(out_csv_file,
         nthread=njobs,
         seed=1,
         n_buckets=8,
-        initial_params=[-1.5, -2.6, -3.6, -1.2, -0.8, 0.04, 0.7, 3.6,
-                        #1., 2., 3., 4., 5., 6., 7.
-                        #0.1
-                        ],
+        initial_params=[
+            #-1.5, -2.6, -3.6, -1.2, -0.8, 0.04, 0.7, 3.6,
+            [0.0] * 8,
+            #1., 2., 3., 4., 5., 6., 7.
+            #0.1
+            ],
         scoring=NegQWKappaScorer)
 
 
@@ -265,7 +267,7 @@ def work(out_csv_file,
                     'min_child_weight': [50],
                     }
         from sklearn.metrics import make_scorer
-        qwkappa = make_scorer(Kappa, weights='quadratic')
+        qwkappa = make_scorer(Kappa, weights='quadratic', min_rating=1, max_rating=8)
         from sklearn.grid_search import GridSearchCV
         grid = GridSearchCV(estimator=clf,
                             param_grid=param_grid,
@@ -407,7 +409,7 @@ USAGE
             help="number of jobs")
 
         parser.add_argument("-f", "--cv-fold",
-            type=int, default=0, action='store', dest="nfold",
+            type=int, default=0, action='store', dest="nfolds",
             help="number of cross-validation folds")
 
         parser.add_argument("-o", "--out-csv",
