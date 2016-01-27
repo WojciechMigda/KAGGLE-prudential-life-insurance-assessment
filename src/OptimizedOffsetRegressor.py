@@ -175,7 +175,7 @@ class DigitizedOptimizedOffsetRegressor(BaseEstimator, RegressorMixin):
             'options': {'disp': True}
             }
 
-        if self.basinhopping:
+        if not self.basinhopping:
             optres = minimize(
                 self.apply_params_and_score,
                 self.params,
@@ -275,7 +275,7 @@ class FullDigitizedOptimizedOffsetRegressor(BaseEstimator, RegressorMixin):
             'options': {'disp': True}
             }
 
-        if self.basinhopping:
+        if not self.basinhopping:
             optres = minimize(
                 self.apply_params_and_score,
                 self.params,
