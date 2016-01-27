@@ -172,7 +172,9 @@ def work(out_csv_file,
          nest,
          njobs,
          nfolds,
-         minimizer):
+         minimizer,
+         mvector,
+         imputer):
 
 
     from zipfile import ZipFile
@@ -221,9 +223,11 @@ def work(out_csv_file,
     #all_data = OneHot(all_data, NOMINALS[:24])
     #all_data = OneHot(all_data, ['GMM6', 'GMM17'])
 
-    print('Eliminate missing values')
     # Use -1 for any others
-    all_data.fillna(-1, inplace=True)
+    if imputer is None:
+        all_data.fillna(-1, inplace=True)
+    else:
+        all_data['Response'].fillna(-1, inplace=True)
 
     # fix the dtype on the label column
     all_data['Response'] = all_data['Response'].astype(int)
@@ -243,6 +247,12 @@ def work(out_csv_file,
     train_X = train.drop(['Id', 'Response'], axis=1).as_matrix()
     test_X = test.drop(['Id', 'Response'], axis=1).as_matrix()
 
+    if imputer is not None:
+        from sklearn.preprocessing import Imputer
+        imp = Imputer(missing_values='NaN', strategy=imputer, axis=0)
+        train_X = imp.fit_transform(train_X)
+        test_X = imp.transform(test_X)
+
 
     clf = PrudentialRegressor(
         objective='reg:linear',
@@ -255,12 +265,7 @@ def work(out_csv_file,
         nthread=njobs,
         seed=1,
         n_buckets=8,
-        initial_params=[
-            -1.5, -2.6, -3.6, -1.2, -0.8, 0.04, 0.7, 3.6,
-            #[0.0] * 8,
-            #[0.0] * 8 + [1., 2., 3., 4., 5., 6., 7.]
-            #0.1
-            ],
+        initial_params=mvector,
         minimizer=minimizer,
         scoring=NegQWKappaScorer)
 
@@ -426,8 +431,19 @@ USAGE
 
         parser.add_argument("-m", "--minimizer",
             action='store', dest="minimizer", default='BFGS',
-            type=str,
+            type=str, choices=['Powell', 'CG', 'BFGS'],
             help="minimizer method for scipy.optimize.minimize")
+
+        parser.add_argument("-M", "--mvector",
+            action='store', dest="mvector", default=[-1.5, -2.6, -3.6, -1.2, -0.8, 0.04, 0.7, 3.6],
+            type=float, nargs='*',
+            help="minimizer's initial params vector")
+
+        parser.add_argument("-I", "--imputer",
+            action='store', dest="imputer", default=None,
+            type=str, choices=['mean', 'median', 'most_frequent'],
+            help="Imputer strategy, None is -1")
+
 
         """
         parser.add_argument("--in-test-csv",
@@ -449,12 +465,13 @@ USAGE
             print(str(k) + ' => ' + str(v))
             pass
 
-
         work(args.out_csv_file,
              args.nest,
              args.njobs,
              args.nfolds,
-             args.minimizer)
+             args.minimizer,
+             args.mvector,
+             args.imputer)
 
 
         return 0
