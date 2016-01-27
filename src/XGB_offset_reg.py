@@ -83,6 +83,91 @@ def NegQWKappaScorer(y_hat, y):
     return -Kappa(y, y_hat, weights='quadratic', min_rating=1, max_rating=8)
 
 
+from sklearn.base import BaseEstimator, RegressorMixin
+class PrudentialRegressor(BaseEstimator, RegressorMixin):
+    def __init__(self,
+                objective='reg:linear',
+                learning_rate=0.045,
+                min_child_weight=50,
+                subsample=0.8,
+                colsample_bytree=0.7,
+                max_depth=7,
+                n_estimators=700,
+                nthread=-1,
+                seed=1,
+                n_buckets=8,
+                initial_params=[-1.5, -2.6, -3.6, -1.2, -0.8, 0.04, 0.7, 3.6,
+                                #1., 2., 3., 4., 5., 6., 7.
+                                ],
+                minimizer='BFGS',
+                scoring=NegQWKappaScorer):
+
+        self.objective = objective
+        self.learning_rate = learning_rate
+        self.min_child_weight = min_child_weight
+        self.subsample = subsample
+        self.colsample_bytree = colsample_bytree
+        self.max_depth = max_depth
+        self.n_estimators = n_estimators
+        self.nthread = nthread
+        self.seed = seed
+        self.n_buckets = n_buckets
+        self.initial_params = initial_params
+        self.minimizer = minimizer
+        self.scoring = scoring
+
+        return
+
+
+    def epsilon(self, Tp):
+        from numpy import finfo
+        return finfo(Tp).eps
+
+
+    def clip(self, arr):
+#        from numpy import clip
+#        return clip(arr, 0., self.n_buckets * (1. - self.epsilon(arr.dtype)))
+        return arr
+
+
+    def fit(self, X, y):
+        from xgboost import XGBRegressor
+        from OptimizedOffsetRegressor import DigitizedOptimizedOffsetRegressor
+
+        self.xgb = XGBRegressor(
+                       objective=self.objective,
+                       learning_rate=self.learning_rate,
+                       min_child_weight=self.min_child_weight,
+                       subsample=self.subsample,
+                       colsample_bytree=self.colsample_bytree,
+                       max_depth=self.max_depth,
+                       n_estimators=self.n_estimators,
+                       nthread=self.nthread,
+                       seed=self.seed)
+        #from OptimizedOffsetRegressor import FullDigitizedOptimizedOffsetRegressor
+        #self.off = FullDigitizedOptimizedOffsetRegressor(n_buckets=self.n_buckets,
+        self.off = DigitizedOptimizedOffsetRegressor(n_buckets=self.n_buckets,
+                       initial_params=self.initial_params,
+                       minimizer=self.minimizer,
+                       scoring=self.scoring)
+
+        self.xgb.fit(X, y)
+        tr_y_hat = self.clip(self.xgb.predict(X,
+                                              ntree_limit=self.xgb._Booster.best_iteration))
+        print('Train score is:', -self.scoring(tr_y_hat, y))
+        self.off.fit(tr_y_hat, y)
+        print("Offsets:", self.off.params)
+        return self
+
+
+    def predict(self, X):
+        te_y_hat = self.clip(self.xgb.predict(X,
+                                              ntree_limit=self.xgb._Booster.best_iteration))
+        return self.off.predict(te_y_hat)
+
+    pass
+
+
 def work(out_csv_file,
          nest,
          njobs,
@@ -159,91 +244,6 @@ def work(out_csv_file,
     test_X = test.drop(['Id', 'Response'], axis=1).as_matrix()
 
 
-    from sklearn.base import BaseEstimator, RegressorMixin
-    class PrudentialRegressor(BaseEstimator, RegressorMixin):
-        def __init__(self,
-                    objective='reg:linear',
-                    learning_rate=0.045,
-                    min_child_weight=50,
-                    subsample=0.8,
-                    colsample_bytree=0.7,
-                    max_depth=7,
-                    n_estimators=700,
-                    nthread=-1,
-                    seed=1,
-                    n_buckets=8,
-                    initial_params=[-1.5, -2.6, -3.6, -1.2, -0.8, 0.04, 0.7, 3.6,
-                                    #1., 2., 3., 4., 5., 6., 7.
-                                    ],
-                    minimizer='BFGS',
-                    scoring=NegQWKappaScorer):
-
-            self.objective = objective
-            self.learning_rate = learning_rate
-            self.min_child_weight = min_child_weight
-            self.subsample = subsample
-            self.colsample_bytree = colsample_bytree
-            self.max_depth = max_depth
-            self.n_estimators = n_estimators
-            self.nthread = nthread
-            self.seed = seed
-            self.n_buckets = n_buckets
-            self.initial_params = initial_params
-            self.minimizer = minimizer
-            self.scoring = scoring
-
-            return
-
-
-        def epsilon(self, Tp):
-            from numpy import finfo
-            return finfo(Tp).eps
-
-
-        def clip(self, arr):
-#            from numpy import clip
-#            return clip(arr, 0., self.n_buckets * (1. - self.epsilon(arr.dtype)))
-            return arr
-
-
-        def fit(self, X, y):
-            from xgboost import XGBRegressor
-            from OptimizedOffsetRegressor import DigitizedOptimizedOffsetRegressor
-
-            self.xgb = XGBRegressor(
-                           objective=self.objective,
-                           learning_rate=self.learning_rate,
-                           min_child_weight=self.min_child_weight,
-                           subsample=self.subsample,
-                           colsample_bytree=self.colsample_bytree,
-                           max_depth=self.max_depth,
-                           n_estimators=self.n_estimators,
-                           nthread=self.nthread,
-                           seed=self.seed)
-            #from OptimizedOffsetRegressor import FullDigitizedOptimizedOffsetRegressor
-            #self.off = FullDigitizedOptimizedOffsetRegressor(n_buckets=self.n_buckets,
-            self.off = DigitizedOptimizedOffsetRegressor(n_buckets=self.n_buckets,
-                           initial_params=self.initial_params,
-                           minimizer=self.minimizer,
-                           scoring=self.scoring)
-
-            self.xgb.fit(X, y)
-            tr_y_hat = self.clip(self.xgb.predict(X,
-                                                  ntree_limit=self.xgb._Booster.best_iteration))
-            print('Train score is:', -self.scoring(tr_y_hat, y))
-            self.off.fit(tr_y_hat, y)
-            print("Offsets:", self.off.params)
-            return self
-
-
-        def predict(self, X):
-            te_y_hat = self.clip(self.xgb.predict(X,
-                                                  ntree_limit=self.xgb._Booster.best_iteration))
-            return self.off.predict(te_y_hat)
-
-        pass
-
-
     clf = PrudentialRegressor(
         objective='reg:linear',
         learning_rate=0.045,
@@ -256,8 +256,8 @@ def work(out_csv_file,
         seed=1,
         n_buckets=8,
         initial_params=[
-            #-1.5, -2.6, -3.6, -1.2, -0.8, 0.04, 0.7, 3.6,
-            [0.0] * 8,
+            -1.5, -2.6, -3.6, -1.2, -0.8, 0.04, 0.7, 3.6,
+            #[0.0] * 8,
             #[0.0] * 8 + [1., 2., 3., 4., 5., 6., 7.]
             #0.1
             ],
