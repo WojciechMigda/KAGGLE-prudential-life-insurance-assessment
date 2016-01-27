@@ -190,6 +190,11 @@ class DigitizedOptimizedOffsetRegressor(BaseEstimator, RegressorMixin):
                 T=0.05,
                 stepsize=0.10,
                 minimizer_kwargs=minimizer_kwargs)
+            minimizer_kwargs['method'] = 'BFGS'
+            optres = minimize(
+                self.apply_params_and_score,
+                optres.x,
+                **minimizer_kwargs)
             pass
 
         print(optres)
@@ -285,6 +290,11 @@ class FullDigitizedOptimizedOffsetRegressor(BaseEstimator, RegressorMixin):
                 T=0.05,
                 stepsize=0.10,
                 minimizer_kwargs=minimizer_kwargs)
+            minimizer_kwargs['method'] = 'BFGS'
+            optres = minimize(
+                self.apply_params_and_score,
+                optres.x,
+                **minimizer_kwargs)
             pass
 
         print(optres)
