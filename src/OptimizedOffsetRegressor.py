@@ -117,6 +117,7 @@ class DigitizedOptimizedOffsetRegressor(BaseEstimator, RegressorMixin):
                  n_buckets=2,
                  initial_params=None,
                  minimizer='BFGS',
+                 basinhopping=False,
                  scoring='accuracy'):
 
         from numpy import array
@@ -132,6 +133,7 @@ class DigitizedOptimizedOffsetRegressor(BaseEstimator, RegressorMixin):
             #assert(len(self.initial_offsets_) == self.n_buckets)
             pass
         self.minimizer = minimizer
+        self.basinhopping = basinhopping
         from sklearn.metrics import get_scorer
         self.scoring = get_scorer(scoring)
         pass
@@ -163,17 +165,34 @@ class DigitizedOptimizedOffsetRegressor(BaseEstimator, RegressorMixin):
         data = vstack((X, X, y))
 
         from scipy.optimize import minimize,approx_fprime
-        optres = minimize(
-            self.apply_params_and_score,
-            self.params,
-            args=(data,),
-            method=self.minimizer,
-            jac=lambda x, args:
-                approx_fprime(x, self.apply_params_and_score, 0.05, args),
-            tol=1e-4,
-            options={'disp': True},
-            )
-        #print(optres)
+
+        minimizer_kwargs = {
+            'args': (data,),
+            'method': self.minimizer,
+            'jac': lambda x, args:
+                    approx_fprime(x, self.apply_params_and_score, 0.05, args),
+            'tol': 1e-4,
+            'options': {'disp': True}
+            }
+
+        if self.basinhopping:
+            optres = minimize(
+                self.apply_params_and_score,
+                self.params,
+                **minimizer_kwargs)
+            pass
+        else:
+            from scipy.optimize import basinhopping
+            optres = basinhopping(
+                self.apply_params_and_score,
+                self.params,
+                niter=100,
+                T=0.05,
+                stepsize=0.10,
+                minimizer_kwargs=minimizer_kwargs)
+            pass
+
+        print(optres)
         self.params = optres.x
         return self
 
@@ -195,6 +214,8 @@ class FullDigitizedOptimizedOffsetRegressor(BaseEstimator, RegressorMixin):
                  offset_scale=1.0,
                  n_buckets=2,
                  initial_params=None,
+                 minimizer='BFGS',
+                 basinhopping=False,
                  scoring='accuracy'):
 
         from numpy import array
@@ -209,6 +230,8 @@ class FullDigitizedOptimizedOffsetRegressor(BaseEstimator, RegressorMixin):
             self.params = array(initial_params)
             #assert(len(self.initial_offsets_) == self.n_buckets)
             pass
+        self.minimizer = minimizer
+        self.basinhopping = basinhopping
         from sklearn.metrics import get_scorer
         self.scoring = get_scorer(scoring)
         pass
@@ -236,12 +259,36 @@ class FullDigitizedOptimizedOffsetRegressor(BaseEstimator, RegressorMixin):
         from numpy import vstack
         data = vstack((X, X, y))
 
-        from scipy.optimize import fmin_powell
-        self.params = fmin_powell(
-            self.apply_params_and_score,
-            self.params,
-            args=(data,)
-            )
+        from scipy.optimize import minimize,approx_fprime
+
+        minimizer_kwargs = {
+            'args': (data,),
+            'method': self.minimizer,
+            'jac': lambda x, args:
+                    approx_fprime(x, self.apply_params_and_score, 0.05, args),
+            'tol': 1e-4,
+            'options': {'disp': True}
+            }
+
+        if self.basinhopping:
+            optres = minimize(
+                self.apply_params_and_score,
+                self.params,
+                **minimizer_kwargs)
+            pass
+        else:
+            from scipy.optimize import basinhopping
+            optres = basinhopping(
+                self.apply_params_and_score,
+                self.params,
+                niter=100,
+                T=0.05,
+                stepsize=0.10,
+                minimizer_kwargs=minimizer_kwargs)
+            pass
+
+        print(optres)
+        self.params = optres.x
         return self
 
 
