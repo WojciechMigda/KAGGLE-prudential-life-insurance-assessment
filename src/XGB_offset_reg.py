@@ -220,6 +220,8 @@ def work(out_csv_file,
                            n_estimators=self.n_estimators,
                            nthread=self.nthread,
                            seed=self.seed)
+            #from OptimizedOffsetRegressor import FullDigitizedOptimizedOffsetRegressor
+            #self.off = FullDigitizedOptimizedOffsetRegressor(n_buckets=self.n_buckets,
             self.off = DigitizedOptimizedOffsetRegressor(n_buckets=self.n_buckets,
                            initial_params=self.initial_params,
                            minimizer=self.minimizer,
@@ -256,7 +258,7 @@ def work(out_csv_file,
         initial_params=[
             #-1.5, -2.6, -3.6, -1.2, -0.8, 0.04, 0.7, 3.6,
             [0.0] * 8,
-            #1., 2., 3., 4., 5., 6., 7.
+            #[0.0] * 8 + [1., 2., 3., 4., 5., 6., 7.]
             #0.1
             ],
         minimizer=minimizer,
