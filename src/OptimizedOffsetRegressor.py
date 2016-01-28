@@ -159,6 +159,7 @@ class DigitizedOptimizedOffsetRegressor(BaseEstimator, RegressorMixin):
     def apply_params_and_score(self, params, data):
         data = self.apply_params(params, data)
         return self.scoring(data[1], data[2])
+        #return -self.scoring(data[1], data[2]) ** 2
 
     def fit(self, X, y):
         from numpy import vstack
