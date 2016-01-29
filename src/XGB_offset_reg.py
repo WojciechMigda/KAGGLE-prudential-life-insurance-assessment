@@ -152,6 +152,14 @@ class PrudentialRegressor(BaseEstimator, RegressorMixin):
                        scoring=self.scoring)
 
         self.xgb.fit(X, y)
+
+#        from xgboost import train,DMatrix
+#        self.xgb._Booster = train(self.xgb.get_xgb_params(),
+#                                  DMatrix(X, label=y),
+#                              self.n_estimators,
+#                              learning_rates=[.05] * 200 + [0.02] * 500)
+
+
         tr_y_hat = self.clip(self.xgb.predict(X,
                                               ntree_limit=self.xgb._Booster.best_iteration))
         print('Train score is:', -self.scoring(tr_y_hat, y))
@@ -174,7 +182,8 @@ def work(out_csv_file,
          nfolds,
          minimizer,
          mvector,
-         imputer):
+         imputer,
+         clf_kwargs):
 
 
     from zipfile import ZipFile
@@ -263,7 +272,7 @@ def work(out_csv_file,
     MedCount: 0.65638
     None: 0.65529
     """
-#    all_data['BMI_Age'] = all_data['BMI'] * all_data['Ins_Age']
+    #all_data['BMI_Age'] = all_data['BMI'] * all_data['Ins_Age']
     med_keyword_columns = all_data.columns[all_data.columns.str.startswith('Medical_Keyword_')]
     all_data['Med_Keywords_Count'] = all_data[med_keyword_columns].sum(axis=1)
 
@@ -291,12 +300,12 @@ def work(out_csv_file,
     train = all_data[all_data['Response'] > 0].copy()
     test = all_data[all_data['Response'] < 1].copy()
 
+    #dropped_cols = ['Id', 'Response', 'Medical_History_10', 'Medical_History_24']
+    dropped_cols = ['Id', 'Response']
 
     train_y = train['Response'].as_matrix()
-#    train_X = train.drop(['Id', 'Response', 'Medical_History_1'], axis=1).as_matrix()
-#    test_X = test.drop(['Id', 'Response', 'Medical_History_1'], axis=1).as_matrix()
-    train_X = train.drop(['Id', 'Response'], axis=1).as_matrix()
-    test_X = test.drop(['Id', 'Response'], axis=1).as_matrix()
+    train_X = train.drop(dropped_cols, axis=1).as_matrix()
+    test_X = test.drop(dropped_cols, axis=1).as_matrix()
 
     if imputer is not None:
         from sklearn.preprocessing import Imputer
@@ -304,23 +313,29 @@ def work(out_csv_file,
         train_X = imp.fit_transform(train_X)
         test_X = imp.transform(test_X)
 
-    feature_names = list(train.drop(['Id', 'Response'], axis=1).columns)
+    feature_names = list(train.drop(dropped_cols, axis=1).columns)
 
-    clf = PrudentialRegressor(
-        objective='reg:linear',
-        learning_rate=0.045,
-        min_child_weight=50,
-        subsample=0.8,
-        colsample_bytree=0.7,
-        max_depth=7,
-        n_estimators=nest,
-        nthread=njobs,
-        seed=1,
-        n_buckets=8,
-        initial_params=mvector,
-        minimizer=minimizer,
-        scoring=NegQWKappaScorer)
-
+    prudential_kwargs = \
+    {
+        'objective': 'reg:linear',
+        'learning_rate': 0.045,
+        'min_child_weight': 50,
+        'subsample': 0.8,
+        'colsample_bytree': 0.7,
+        'max_depth': 7,
+        'n_estimators': nest,
+        'nthread': njobs,
+        'seed': 1,
+        'n_buckets': 8,
+        'initial_params': mvector,
+        'minimizer': minimizer,
+        'scoring': NegQWKappaScorer
+    }
+    # override kwargs with any changes
+    for k, v in clf_kwargs.items():
+        prudential_kwargs[k] = v
+    clf = PrudentialRegressor(**prudential_kwargs)
+    print("PrudentialRegressor", clf.get_params())
 
     if nfolds > 1:
         param_grid={
@@ -507,19 +522,9 @@ USAGE
             type=str, choices=['mean', 'median', 'most_frequent'],
             help="Imputer strategy, None is -1")
 
-
-        """
-        parser.add_argument("--in-test-csv",
-            action='store', dest="in_test_csv", default='test.csv',
-            type=str,
-            help="input CSV with test data zipped inside IN_TEST_ARCH")
-
-        parser.add_argument("-o", "--out-h5",
-            action='store', dest="out_h5", default='raw-data.h5',
-            type=str,
-            help="output HDF5 filename for data")
-
-        """
+        parser.add_argument("--clf-params",
+            type=str, default="{}", action='store', dest="clf_params",
+            help="classifier parameters subset to override defaults")
 
         # Process arguments
         args = parser.parse_args()
@@ -534,7 +539,8 @@ USAGE
              args.nfolds,
              args.minimizer,
              args.mvector,
-             args.imputer)
+             args.imputer,
+             eval(args.clf_params))
 
 
         return 0
