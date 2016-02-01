@@ -173,6 +173,102 @@ class PrudentialRegressor(BaseEstimator, RegressorMixin):
     pass
 
 
+class PrudentialRegressorCVO(BaseEstimator, RegressorMixin):
+    def __init__(self,
+                objective='reg:linear',
+                learning_rate=0.045,
+                min_child_weight=50,
+                subsample=0.8,
+                colsample_bytree=0.7,
+                max_depth=7,
+                n_estimators=700,
+                nthread=-1,
+                seed=0,
+                n_buckets=8,
+                initial_params=[-1.5, -2.6, -3.6, -1.2, -0.8, 0.04, 0.7, 3.6,
+                                #1., 2., 3., 4., 5., 6., 7.
+                                ],
+                minimizer='BFGS',
+                scoring=NegQWKappaScorer):
+
+        self.objective = objective
+        self.learning_rate = learning_rate
+        self.min_child_weight = min_child_weight
+        self.subsample = subsample
+        self.colsample_bytree = colsample_bytree
+        self.max_depth = max_depth
+        self.n_estimators = n_estimators
+        self.nthread = nthread
+        self.seed = seed
+        self.n_buckets = n_buckets
+        self.initial_params = initial_params
+        self.minimizer = minimizer
+        self.scoring = scoring
+
+        return
+
+
+    def fit(self, X, y):
+        from xgboost import XGBRegressor
+        from OptimizedOffsetRegressor import DigitizedOptimizedOffsetRegressor
+
+        #from OptimizedOffsetRegressor import FullDigitizedOptimizedOffsetRegressor
+        #self.off = FullDigitizedOptimizedOffsetRegressor(n_buckets=self.n_buckets,
+        #               basinhopping=True,
+
+        from sklearn.cross_validation import StratifiedKFold
+        kf = StratifiedKFold(y, n_folds=3)
+        print(kf)
+        params = []
+        for itrain, itest in kf:
+            ytrain = y[itrain]
+            Xtrain = X.iloc[list(itrain)]
+            ytest = y[itest]
+            Xtest = X.iloc[list(itest)]
+
+            self.xgb = XGBRegressor(
+                           objective=self.objective,
+                           learning_rate=self.learning_rate,
+                           min_child_weight=self.min_child_weight,
+                           subsample=self.subsample,
+                           colsample_bytree=self.colsample_bytree,
+                           max_depth=self.max_depth,
+                           n_estimators=self.n_estimators,
+                           nthread=self.nthread,
+                           missing=0.0,
+                           seed=self.seed)
+            self.xgb.fit(Xtrain, ytrain)
+            te_y_hat = self.xgb.predict(Xtest,
+                                        ntree_limit=self.xgb.booster().best_iteration)
+            print('XGB Test score is:', -self.scoring(te_y_hat, ytest))
+
+            self.off = DigitizedOptimizedOffsetRegressor(n_buckets=self.n_buckets,
+                           initial_params=self.initial_params,
+                           minimizer=self.minimizer,
+                           scoring=self.scoring)
+            self.off.fit(te_y_hat, ytest)
+            print("Offsets:", self.off.params)
+            params += [list(self.off.params)]
+
+            pass
+
+        from numpy import array
+        self.off.params = array(params).mean(axis=0)
+        print("Mean Offsets:", self.off.params)
+        self.xgb.fit(X, y)
+
+        return self
+
+
+    def predict(self, X):
+        from numpy import clip
+        te_y_hat = self.xgb.predict(X, ntree_limit=self.xgb.booster().best_iteration)
+        return clip(self.off.predict(te_y_hat), 1, 8)
+
+    pass
+
+
+
 def work(out_csv_file,
          nest,
          njobs,
@@ -236,10 +332,6 @@ def work(out_csv_file,
     all_data['Med_Keywords_Count'] = all_data[med_keyword_columns].sum(axis=1)
 
     #all_data = OneHot(all_data, ['Employment_Info_2', 'Employment_Info_3'])
-    #all_data = OneHot(all_data, NOMINALS[:24] + ['Product_Info_2_char'] + ['Product_Info_2_num'])
-    #all_data = OneHot(all_data, NOMINALS[:24])
-    #all_data = OneHot(all_data, ['GMM6', 'GMM17'])
-
     #all_data = all_data.drop(ranked_features[100:], axis=1)
 
 
@@ -306,7 +398,7 @@ def work(out_csv_file,
     # override kwargs with any changes
     for k, v in clf_kwargs.items():
         prudential_kwargs[k] = v
-    clf = PrudentialRegressor(**prudential_kwargs)
+    clf = PrudentialRegressorCVO(**prudential_kwargs)
     print("PrudentialRegressor", clf.get_params())
 
     if nfolds > 1:
@@ -335,69 +427,6 @@ def work(out_csv_file,
         print('best score: {:.5f}'.format(grid.best_score_))
         print('best params:', grid.best_params_)
 
-        """
-CV=3
-grid scores:
-  mean: 0.65536, std: 0.00359, params: {'n_estimators': 500, 'max_depth': 7}
-best score: 0.65536
-best params: {'n_estimators': 500, 'max_depth': 7}
-
-grid scores:
-  mean: 0.65318, std: 0.00355, params: {'n_estimators': 500, 'max_depth': 10}
-best score: 0.65318
-best params: {'n_estimators': 500, 'max_depth': 10}
-
-grid scores:
-  mean: 0.63324, std: 0.00294, params: {'n_estimators': 500, 'max_depth': 50}
-best score: 0.63324
-best params: {'n_estimators': 500, 'max_depth': 50}
-
-grid scores:
-  mean: 0.65439, std: 0.00325, params: {'n_estimators': 700, 'max_depth': 7}
-best score: 0.65439
-best params: {'n_estimators': 700, 'max_depth': 7}
-
-grid scores:
-  mean: 0.65461, std: 0.00378, params: {'n_estimators': 320, 'max_depth': 7}
-best score: 0.65461
-best params: {'n_estimators': 320, 'max_depth': 7}
-
-grid scores:
-  mean: 0.65516, std: 0.00290, params: {'n_estimators': 500, 'max_depth': 6}
-  mean: 0.65513, std: 0.00332, params: {'n_estimators': 500, 'max_depth': 8}
-best score: 0.65516
-best params: {'n_estimators': 500, 'max_depth': 6}
-
-grid scores:
-  mean: 0.65536, std: 0.00359, params: {'n_estimators': 500, 'subsample': 0.8, 'colsample_bytree': 0.7, 'max_depth': 7}
-  mean: 0.65637, std: 0.00347, params: {'n_estimators': 500, 'subsample': 0.8, 'colsample_bytree': 0.8, 'max_depth': 7}
-  mean: 0.65482, std: 0.00349, params: {'n_estimators': 500, 'subsample': 0.8, 'colsample_bytree': 0.9, 'max_depth': 7}
-  mean: 0.65374, std: 0.00339, params: {'n_estimators': 500, 'subsample': 0.8, 'colsample_bytree': 1.0, 'max_depth': 7}
-best score: 0.65637
-best params: {'n_estimators': 500, 'subsample': 0.8, 'colsample_bytree': 0.8, 'max_depth': 7}
-
-grid scores:
-  mean: 0.65565, std: 0.00325, params: {'n_estimators': 500, 'subsample': 0.8, 'colsample_bytree': 0.8, 'max_depth': 7, 'min_child_weight': 40}
-  mean: 0.65637, std: 0.00347, params: {'n_estimators': 500, 'subsample': 0.8, 'colsample_bytree': 0.8, 'max_depth': 7, 'min_child_weight': 50}
-  mean: 0.65472, std: 0.00410, params: {'n_estimators': 500, 'subsample': 0.8, 'colsample_bytree': 0.8, 'max_depth': 7, 'min_child_weight': 60}
-best score: 0.65637
-best params: {'n_estimators': 500, 'subsample': 0.8, 'colsample_bytree': 0.8, 'max_depth': 7, 'min_child_weight': 50}
-
-
-
-CV=5
-grid scores:
-  mean: 0.65662, std: 0.00351, params: {'n_estimators': 500, 'max_depth': 7}
-best score: 0.65662
-best params: {'n_estimators': 500, 'max_depth': 7}
-
-grid scores:
-  mean: 0.65406, std: 0.00407, params: {'n_estimators': 500, 'max_depth': 10}
-best score: 0.65406
-best params: {'n_estimators': 500, 'max_depth': 10}
-
-
-        """
         pass
 
     else:
