@@ -198,51 +198,6 @@ def work(out_csv_file,
     from numpy import rint,clip,savetxt,stack
 
 
-    ranked_features = [
-        'BMI', 'Ins_Age', 'Wt', 'Employment_Info_1', 'Medical_History_2',
-        'Employment_Info_6', 'Medical_History_1', 'Family_Hist_3',
-        'Product_Info_4', 'Insurance_History_5', 'Family_Hist_4', 'Ht',
-        'Family_Hist_5', 'Medical_History_15', 'Family_Hist_2',
-        'Med_Keywords_Count', 'Product_Info_2', 'InsuredInfo_3',
-        'Employment_Info_4', 'Employment_Info_2', 'Product_Info_2_num',
-        'GMM17', 'Medical_History_4', 'Medical_History_23',
-        'Medical_History_13', 'Product_Info_2_char', 'Medical_History_24',
-        'InsuredInfo_6', 'Medical_History_41', 'Insurance_History_8',
-        'Family_Hist_1', 'Medical_History_18', 'Medical_History_28',
-        'Medical_Keyword_3', 'Medical_History_30', 'Insurance_History_4',
-        'Medical_History_9', 'Medical_History_29', 'Product_Info_3',
-        'Medical_History_16', 'InsuredInfo_1', 'Medical_Keyword_15',
-        'Insurance_History_1', 'Medical_History_40', 'Medical_Keyword_25',
-        'Insurance_History_7', 'Insurance_History_2', 'Medical_History_20',
-        'Medical_History_39', 'Medical_Keyword_37', 'Medical_History_11',
-        'Medical_History_33', 'Medical_History_17', 'Medical_History_21',
-        'InsuredInfo_5', 'Medical_History_34', 'Medical_History_5',
-        'Medical_History_3', 'Medical_History_25', 'Medical_Keyword_23',
-        'Medical_History_19', 'Product_Info_6', 'GMM6', 'Medical_History_12',
-        'Medical_History_32', 'Medical_History_27', 'Medical_History_10',
-        'Medical_History_7', 'Medical_History_31', 'Insurance_History_3',
-        'InsuredInfo_7', 'Employment_Info_5', 'Medical_History_6',
-        'Medical_Keyword_38', 'Medical_Keyword_41', 'Medical_History_8',
-        'Medical_History_37', 'InsuredInfo_2', 'Medical_Keyword_9',
-        'Medical_Keyword_40', 'InsuredInfo_4', 'Medical_Keyword_47',
-        'Medical_Keyword_42', 'Medical_History_22', 'Employment_Info_3',
-        'Medical_Keyword_33', 'Medical_Keyword_48', 'Medical_History_35',
-        'Medical_History_36', 'Medical_Keyword_34', 'Medical_Keyword_22',
-        'Medical_Keyword_1', 'Medical_Keyword_10', 'Medical_Keyword_24',
-        'Medical_History_14', 'Medical_Keyword_45', 'Medical_History_26',
-        'Medical_Keyword_21', 'Medical_Keyword_26', 'Medical_Keyword_29',
-        'Medical_Keyword_19', 'Medical_Keyword_39', 'Medical_Keyword_31',
-        'Insurance_History_9', 'Medical_Keyword_2', 'Medical_Keyword_11',
-        'Medical_Keyword_43', 'Medical_Keyword_32', 'Product_Info_7',
-        'Medical_Keyword_6', 'Product_Info_1', 'Medical_Keyword_16',
-        'Medical_History_38', 'Medical_Keyword_17', 'Medical_Keyword_30',
-        'Product_Info_5', 'Medical_Keyword_28', 'Medical_Keyword_12',
-        'Medical_Keyword_4', 'Medical_Keyword_27', 'Medical_Keyword_5',
-        'Medical_Keyword_18', 'Medical_Keyword_7', 'Medical_Keyword_20',
-        'Medical_Keyword_14', 'Medical_Keyword_8', 'Medical_Keyword_46',
-        'Medical_Keyword_36', 'Medical_Keyword_44', 'Medical_Keyword_35',
-        'Medical_Keyword_13']
-
     train = read_csv(ZipFile("../../data/train.csv.zip", 'r').open('train.csv'))
     test = read_csv(ZipFile("../../data/test.csv.zip", 'r').open('test.csv'))
 
@@ -264,14 +219,21 @@ def work(out_csv_file,
 #    all_data = all_data.join(
 #        G_vectors[['G8', 'G11', 'G12', 'G13', 'G17', 'G18', 'G19', 'G20']])
 
+#    from sklearn.preprocessing import Imputer
+#    imp = Imputer(missing_values='NaN', strategy='most_frequent', axis=0)
+#    all_data[DISCRETE] = imp.fit_transform(all_data[DISCRETE])
+#    imp = Imputer(missing_values='NaN', strategy='median', axis=0)
+#    all_data[CONTINUOUS] = imp.fit_transform(all_data[CONTINUOUS])
+#    all_data[BOOLEANS] = all_data[BOOLEANS] + 1e6
+
     # create any new variables
     all_data['Product_Info_2_char'] = all_data.Product_Info_2.str[0]
     all_data['Product_Info_2_num'] = all_data.Product_Info_2.str[1]
 
     # factorize categorical variables
-    all_data['Product_Info_2'] = factorize(all_data['Product_Info_2'])[0]
-    all_data['Product_Info_2_char'] = factorize(all_data['Product_Info_2_char'])[0]
-    all_data['Product_Info_2_num'] = factorize(all_data['Product_Info_2_num'])[0]
+    all_data['Product_Info_2'] = factorize(all_data['Product_Info_2'])[0]# + 1
+    all_data['Product_Info_2_char'] = factorize(all_data['Product_Info_2_char'])[0]# + 1
+    all_data['Product_Info_2_num'] = factorize(all_data['Product_Info_2_num'])[0]# + 1
 
     """
     Both: 0.65576
@@ -290,13 +252,28 @@ def work(out_csv_file,
 
     #all_data = all_data.drop(ranked_features[100:], axis=1)
 
+
+    """
+    print('BOOLEANS:')
+    for col in all_data[BOOLEANS]:
+        print(col, all_data[col].dtype, min(all_data[col]), max(all_data[col]), float(sum(all_data[col] == 0)) / len(all_data[col]))
+    print('DISCRETE:')
+    for col in all_data[DISCRETE]:
+        print(col, all_data[col].dtype, min(all_data[col]), max(all_data[col]), float(sum(all_data[col] == 0)) / len(all_data[col]))
+    print('CONTINUOUS:')
+    for col in all_data[CONTINUOUS]:
+        print(col, all_data[col].dtype, min(all_data[col]), max(all_data[col]), float(sum(all_data[col] == 0)) / len(all_data[col]))
+    print('NOMINALS:')
+    for col in all_data[NOMINALS]:
+        print(col, all_data[col].dtype, min(all_data[col]), max(all_data[col]), float(sum(all_data[col] == 0)) / len(all_data[col]))
+    return
+    """
+
     # Use -1 for any others
     if imputer is None:
         all_data.fillna(-1, inplace=True)
     else:
         all_data['Response'].fillna(-1, inplace=True)
-
-    all_data[BOOLEANS] = all_data[BOOLEANS].astype(bool)
 
     # fix the dtype on the label column
     all_data['Response'] = all_data['Response'].astype(int)
@@ -349,7 +326,7 @@ def work(out_csv_file,
                     'colsample_bytree': [0.67],
                     'subsample': [0.9],
                     'min_child_weight': [240],
-                    'initial_params': [[-0.71238755, -1.4970176, -1.73800531, -1.13361266, -0.82986203, -0.06473039, 0.69008725, 0.94815881]]
+                    #'initial_params': [[-0.71238755, -1.4970176, -1.73800531, -1.13361266, -0.82986203, -0.06473039, 0.69008725, 0.94815881]]
                     }
         from sklearn.metrics import make_scorer
         MIN, MAX = (-3, 12)
