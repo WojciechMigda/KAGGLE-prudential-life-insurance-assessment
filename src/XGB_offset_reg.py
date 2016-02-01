@@ -60,6 +60,15 @@ NOMINALS = ['Product_Info_1', 'Product_Info_2', 'Product_Info_3',
             'Medical_History_37', 'Medical_History_38', 'Medical_History_39',
             'Medical_History_40', 'Medical_History_41']
 
+CONTINUOUS = ['Product_Info_4', 'Ins_Age', 'Ht', 'Wt', 'BMI',
+              'Employment_Info_1', 'Employment_Info_4', 'Employment_Info_6',
+              'Insurance_History_5', 'Family_Hist_2', 'Family_Hist_3',
+              'Family_Hist_4', 'Family_Hist_5']
+
+DISCRETE = ['Medical_History_1', 'Medical_History_10', 'Medical_History_15',
+            'Medical_History_24', 'Medical_History_32']
+
+BOOLEANS = ['Medical_Keyword_' + str(i + 1) for i in range(48)]
 
 def OneHot(df, colnames):
     from pandas import get_dummies, concat
@@ -74,13 +83,16 @@ def OneHot(df, colnames):
 
 
 def Kappa(y_true, y_pred, **kwargs):
-    from numpy import clip
     from skll import kappa
-    return kappa(clip(y_true, 1, 8), clip(y_pred, 1, 8), **kwargs)
+    return kappa(y_true, y_pred, **kwargs)
 
 
 def NegQWKappaScorer(y_hat, y):
-    return -Kappa(y, y_hat, weights='quadratic', min_rating=1, max_rating=8)
+    from numpy import clip
+    #MIN, MAX = (-3, 12)
+    MIN, MAX = (1, 8)
+    return -Kappa(clip(y, MIN, MAX), clip(y_hat, MIN, MAX),
+                  weights='quadratic', min_rating=MIN, max_rating=MAX)
 
 
 from sklearn.base import BaseEstimator, RegressorMixin
@@ -94,7 +106,7 @@ class PrudentialRegressor(BaseEstimator, RegressorMixin):
                 max_depth=7,
                 n_estimators=700,
                 nthread=-1,
-                seed=1,
+                seed=0,
                 n_buckets=8,
                 initial_params=[-1.5, -2.6, -3.6, -1.2, -0.8, 0.04, 0.7, 3.6,
                                 #1., 2., 3., 4., 5., 6., 7.
@@ -143,22 +155,17 @@ class PrudentialRegressor(BaseEstimator, RegressorMixin):
                        max_depth=self.max_depth,
                        n_estimators=self.n_estimators,
                        nthread=self.nthread,
+                       missing=0.0,
                        seed=self.seed)
         #from OptimizedOffsetRegressor import FullDigitizedOptimizedOffsetRegressor
         #self.off = FullDigitizedOptimizedOffsetRegressor(n_buckets=self.n_buckets,
+        #               basinhopping=True,
         self.off = DigitizedOptimizedOffsetRegressor(n_buckets=self.n_buckets,
                        initial_params=self.initial_params,
                        minimizer=self.minimizer,
                        scoring=self.scoring)
 
         self.xgb.fit(X, y)
-
-#        from xgboost import train,DMatrix
-#        self.xgb._Booster = train(self.xgb.get_xgb_params(),
-#                                  DMatrix(X, label=y),
-#                              self.n_estimators,
-#                              learning_rates=[.05] * 200 + [0.02] * 500)
-
 
         tr_y_hat = self.clip(self.xgb.predict(X,
                                               ntree_limit=self.xgb._Booster.best_iteration))
@@ -169,9 +176,9 @@ class PrudentialRegressor(BaseEstimator, RegressorMixin):
 
 
     def predict(self, X):
-        te_y_hat = self.clip(self.xgb.predict(X,
-                                              ntree_limit=self.xgb._Booster.best_iteration))
-        return self.off.predict(te_y_hat)
+        from numpy import clip
+        te_y_hat = self.xgb.predict(X, ntree_limit=self.xgb._Booster.best_iteration)
+        return clip(self.off.predict(te_y_hat), -3, 12)
 
     pass
 
@@ -239,15 +246,15 @@ def work(out_csv_file,
     train = read_csv(ZipFile("../../data/train.csv.zip", 'r').open('train.csv'))
     test = read_csv(ZipFile("../../data/test.csv.zip", 'r').open('test.csv'))
 
-    gmm17_train = read_csv('GMM_17_full_train.csv')
-    gmm17_test = read_csv('GMM_17_full_test.csv')
-    gmm6_train = read_csv('GMM_6_full_train.csv')
-    gmm6_test = read_csv('GMM_6_full_test.csv')
-
-    train['GMM17'] = gmm17_train['Response']
-    test['GMM17'] = gmm17_test['Response']
-    train['GMM6'] = gmm6_train['Response']
-    test['GMM6'] = gmm6_test['Response']
+#    gmm17_train = read_csv('GMM_17_full_train.csv')
+#    gmm17_test = read_csv('GMM_17_full_test.csv')
+#    gmm6_train = read_csv('GMM_6_full_train.csv')
+#    gmm6_test = read_csv('GMM_6_full_test.csv')
+#
+#    train['GMM17'] = gmm17_train['Response']
+#    test['GMM17'] = gmm17_test['Response']
+#    train['GMM6'] = gmm6_train['Response']
+#    test['GMM6'] = gmm6_test['Response']
 
     # combine train and test
     all_data = train.append(test)
@@ -272,7 +279,7 @@ def work(out_csv_file,
     MedCount: 0.65638
     None: 0.65529
     """
-    #all_data['BMI_Age'] = all_data['BMI'] * all_data['Ins_Age']
+    all_data['BMI_Age'] = all_data['BMI'] * all_data['Ins_Age']
     med_keyword_columns = all_data.columns[all_data.columns.str.startswith('Medical_Keyword_')]
     all_data['Med_Keywords_Count'] = all_data[med_keyword_columns].sum(axis=1)
 
@@ -289,23 +296,21 @@ def work(out_csv_file,
     else:
         all_data['Response'].fillna(-1, inplace=True)
 
+    all_data[BOOLEANS] = all_data[BOOLEANS].astype(bool)
+
     # fix the dtype on the label column
     all_data['Response'] = all_data['Response'].astype(int)
-
-    # Provide split column
-    #from numpy.random import randint
-    #all_data['Split'] = randint(5, size=all_data.shape[0])
 
     # split train and test
     train = all_data[all_data['Response'] > 0].copy()
     test = all_data[all_data['Response'] < 1].copy()
 
-    #dropped_cols = ['Id', 'Response', 'Medical_History_10', 'Medical_History_24']
-    dropped_cols = ['Id', 'Response']
+    dropped_cols = ['Id', 'Response', 'Medical_History_10', 'Medical_History_24']
+#    dropped_cols = ['Id', 'Response']
 
-    train_y = train['Response'].as_matrix()
-    train_X = train.drop(dropped_cols, axis=1).as_matrix()
-    test_X = test.drop(dropped_cols, axis=1).as_matrix()
+    train_y = train['Response'].values
+    train_X = train.drop(dropped_cols, axis=1)
+    test_X = test.drop(dropped_cols, axis=1)
 
     if imputer is not None:
         from sklearn.preprocessing import Imputer
@@ -325,7 +330,7 @@ def work(out_csv_file,
         'max_depth': 7,
         'n_estimators': nest,
         'nthread': njobs,
-        'seed': 1,
+        'seed': 0,
         'n_buckets': 8,
         'initial_params': mvector,
         'minimizer': minimizer,
@@ -339,14 +344,17 @@ def work(out_csv_file,
 
     if nfolds > 1:
         param_grid={
-                    'n_estimators': [500],
-                    'max_depth': [7],
-                    'colsample_bytree': [0.7],
-                    'subsample': [0.8],
-                    'min_child_weight': [50],
+                    'n_estimators': [700],
+                    'max_depth': [6],
+                    'colsample_bytree': [0.67],
+                    'subsample': [0.9],
+                    'min_child_weight': [240],
+                    'initial_params': [[-0.71238755, -1.4970176, -1.73800531, -1.13361266, -0.82986203, -0.06473039, 0.69008725, 0.94815881]]
                     }
         from sklearn.metrics import make_scorer
-        qwkappa = make_scorer(Kappa, weights='quadratic', min_rating=1, max_rating=8)
+        MIN, MAX = (-3, 12)
+        qwkappa = make_scorer(Kappa, weights='quadratic',
+                              min_rating=MIN, max_rating=MAX)
         from sklearn.grid_search import GridSearchCV
         grid = GridSearchCV(estimator=clf,
                             param_grid=param_grid,
