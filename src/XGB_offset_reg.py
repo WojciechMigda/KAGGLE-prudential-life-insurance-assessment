@@ -319,7 +319,7 @@ def work(out_csv_file,
                     #'initial_params': [[-0.71238755, -1.4970176, -1.73800531, -1.13361266, -0.82986203, -0.06473039, 0.69008725, 0.94815881]]
                     }
         from sklearn.metrics import make_scorer
-        MIN, MAX = (-3, 12)
+        MIN, MAX = (1, 8)
         qwkappa = make_scorer(Kappa, weights='quadratic',
                               min_rating=MIN, max_rating=MAX)
         from sklearn.grid_search import GridSearchCV
