@@ -131,17 +131,6 @@ class PrudentialRegressor(BaseEstimator, RegressorMixin):
         return
 
 
-    def epsilon(self, Tp):
-        from numpy import finfo
-        return finfo(Tp).eps
-
-
-    def clip(self, arr):
-#        from numpy import clip
-#        return clip(arr, 0., self.n_buckets * (1. - self.epsilon(arr.dtype)))
-        return arr
-
-
     def fit(self, X, y):
         from xgboost import XGBRegressor
         from OptimizedOffsetRegressor import DigitizedOptimizedOffsetRegressor
@@ -167,17 +156,18 @@ class PrudentialRegressor(BaseEstimator, RegressorMixin):
 
         self.xgb.fit(X, y)
 
-        tr_y_hat = self.clip(self.xgb.predict(X,
-                                              ntree_limit=self.xgb._Booster.best_iteration))
+        tr_y_hat = self.xgb.predict(X,
+                                    ntree_limit=self.xgb.booster().best_iteration)
         print('Train score is:', -self.scoring(tr_y_hat, y))
         self.off.fit(tr_y_hat, y)
         print("Offsets:", self.off.params)
+
         return self
 
 
     def predict(self, X):
         from numpy import clip
-        te_y_hat = self.xgb.predict(X, ntree_limit=self.xgb._Booster.best_iteration)
+        te_y_hat = self.xgb.predict(X, ntree_limit=self.xgb.booster().best_iteration)
         return clip(self.off.predict(te_y_hat), -3, 12)
 
     pass
