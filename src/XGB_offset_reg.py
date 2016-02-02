@@ -33,6 +33,17 @@ from __future__ import print_function
 
 
 DEBUG = False
+
+try:
+    import ml_metrics
+except ImportError:
+    KAGGLE = False
+    pass
+else:
+    DEBUG = True
+    KAGGLE = True
+    pass
+
 __all__ = []
 __version__ = "0.0.1"
 __date__ = '2016-01-22'
@@ -83,7 +94,8 @@ def OneHot(df, colnames):
 
 
 def Kappa(y_true, y_pred, **kwargs):
-    from skll import kappa
+    if not KAGGLE:
+        from skll import kappa
     return kappa(y_true, y_pred, **kwargs)
 
 
@@ -133,7 +145,8 @@ class PrudentialRegressor(BaseEstimator, RegressorMixin):
 
     def fit(self, X, y):
         from xgboost import XGBRegressor
-        from OptimizedOffsetRegressor import DigitizedOptimizedOffsetRegressor
+        if not KAGGLE:
+            from OptimizedOffsetRegressor import DigitizedOptimizedOffsetRegressor
 
         self.xgb = XGBRegressor(
                        objective=self.objective,
@@ -210,14 +223,37 @@ class PrudentialRegressorCVO(BaseEstimator, RegressorMixin):
 
     def fit(self, X, y):
         from xgboost import XGBRegressor
-        from OptimizedOffsetRegressor import DigitizedOptimizedOffsetRegressor
+        if not KAGGLE:
+            from OptimizedOffsetRegressor import DigitizedOptimizedOffsetRegressor
 
         #from OptimizedOffsetRegressor import FullDigitizedOptimizedOffsetRegressor
         #self.off = FullDigitizedOptimizedOffsetRegressor(n_buckets=self.n_buckets,
         #               basinhopping=True,
 
+        """
+2 / 10
+grid scores:
+  mean: 0.65688, std: 0.00725, params: {'n_estimators': 700, 'subsample': 0.9, 'colsample_bytree': 0.67, 'max_depth': 6, 'min_child_weight': 240}
+best score: 0.65688
+
+3 / 10
+grid scores:
+  mean: 0.65705, std: 0.00714, params: {'n_estimators': 700, 'subsample': 0.9, 'colsample_bytree': 0.67, 'max_depth': 6, 'min_child_weight': 240}
+best score: 0.65705
+
+4 / 10
+grid scores:
+  mean: 0.65643, std: 0.00715, params: {'n_estimators': 700, 'subsample': 0.9, 'colsample_bytree': 0.67, 'max_depth': 6, 'min_child_weight': 240}
+best score: 0.65643
+
+5 / 10
+grid scores:
+  mean: 0.65630, std: 0.00699, params: {'n_estimators': 700, 'subsample': 0.9, 'colsample_bytree': 0.67, 'max_depth': 6, 'min_child_weight': 240}
+best score: 0.65630
+
+        """
         from sklearn.cross_validation import StratifiedKFold
-        kf = StratifiedKFold(y, n_folds=3)
+        kf = StratifiedKFold(y, n_folds=2)
         print(kf)
         params = []
         for itrain, itest in kf:
@@ -283,9 +319,12 @@ def work(out_csv_file,
     from pandas import read_csv,factorize
     from numpy import rint,clip,savetxt,stack
 
-
-    train = read_csv(ZipFile("../../data/train.csv.zip", 'r').open('train.csv'))
-    test = read_csv(ZipFile("../../data/test.csv.zip", 'r').open('test.csv'))
+    if KAGGLE:
+        train = read_csv("../input/train.csv")
+        test = read_csv("../input/test.csv")
+    else:
+        train = read_csv(ZipFile("../../data/train.csv.zip", 'r').open('train.csv'))
+        test = read_csv(ZipFile("../../data/test.csv.zip", 'r').open('test.csv'))
 
 #    gmm17_train = read_csv('GMM_17_full_train.csv')
 #    gmm17_test = read_csv('GMM_17_full_test.csv')
@@ -471,7 +510,10 @@ def main(argv=None): # IGNORE:C0111
     program_version = "v%s" % __version__
     program_build_date = str(__updated__)
     program_version_message = '%%(prog)s %s (%s)' % (program_version, program_build_date)
-    program_shortdesc = __import__('__main__').__doc__.split("\n")[1]
+    try:
+        program_shortdesc = __import__('__main__').__doc__.split("\n")[1]
+    except:
+        program_shortdesc = __import__('__main__').__doc__
     program_license = '''%s
 
   Created by Wojciech Migda on %s.
@@ -567,7 +609,10 @@ USAGE
 if __name__ == "__main__":
     if DEBUG:
         from sys import argv
-        argv.append("-h")
+        argv.append("-n 700")
+        argv.append("--minimizer=Powell")
+        argv.append("--clf-params={'learning_rate': 0.05, 'min_child_weight': 240, 'subsample': 0.9, 'colsample_bytree': 0.67, 'max_depth': 6, 'initial_params': [0.1, -1, -2, -1, -0.8, 0.02, 0.8, 1]}")
+        argv.append("-f 10")
         pass
     from sys import exit as Exit
     Exit(main())
