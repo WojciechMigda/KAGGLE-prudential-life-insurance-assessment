@@ -181,7 +181,7 @@ class PrudentialRegressor(BaseEstimator, RegressorMixin):
     def predict(self, X):
         from numpy import clip
         te_y_hat = self.xgb.predict(X, ntree_limit=self.xgb.booster().best_iteration)
-        return clip(self.off.predict(te_y_hat), -3, 12)
+        return clip(self.off.predict(te_y_hat), 1, 8)
 
     pass
 
@@ -604,10 +604,13 @@ def work(out_csv_file,
         MIN, MAX = (1, 8)
         qwkappa = make_scorer(Kappa, weights='quadratic',
                               min_rating=MIN, max_rating=MAX)
+
+        from sklearn.cross_validation import StratifiedKFold
         from sklearn.grid_search import GridSearchCV
         grid = GridSearchCV(estimator=clf,
                             param_grid=param_grid,
-                            cv=nfolds, scoring=qwkappa, n_jobs=1,
+                            cv=StratifiedKFold(train_y, n_folds=nfolds),
+                            scoring=qwkappa, n_jobs=1,
                             verbose=1,
                             refit=False)
         grid.fit(train_X, train_y)
