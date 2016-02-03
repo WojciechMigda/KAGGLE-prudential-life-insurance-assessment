@@ -231,6 +231,22 @@ class PrudentialRegressorCVO(BaseEstimator, RegressorMixin):
         #               basinhopping=True,
 
         """
+2 / 5
+grid scores:
+  mean: 0.65531, std: 0.00333, params: {'n_estimators': 700, 'subsample': 0.9, 'colsample_bytree': 0.67, 'max_depth': 6, 'min_child_weight': 240}
+best score: 0.65531
+
+3 / 5
+grid scores:
+  mean: 0.65474, std: 0.00308, params: {'n_estimators': 700, 'subsample': 0.9, 'colsample_bytree': 0.67, 'max_depth': 6, 'min_child_weight': 240}
+best score: 0.65474
+
+4 / 5
+grid scores:
+  mean: 0.65490, std: 0.00302, params: {'n_estimators': 700, 'subsample': 0.9, 'colsample_bytree': 0.67, 'max_depth': 6, 'min_child_weight': 240}
+best score: 0.65490
+
+
 2 / 10
 grid scores:
   mean: 0.65688, std: 0.00725, params: {'n_estimators': 700, 'subsample': 0.9, 'colsample_bytree': 0.67, 'max_depth': 6, 'min_child_weight': 240}
@@ -304,8 +320,143 @@ best score: 0.65630
     pass
 
 
+class PrudentialRegressorCVO2(BaseEstimator, RegressorMixin):
+    def __init__(self,
+                objective='reg:linear',
+                learning_rate=0.045,
+                min_child_weight=50,
+                subsample=0.8,
+                colsample_bytree=0.7,
+                max_depth=7,
+                n_estimators=700,
+                nthread=-1,
+                seed=0,
+                n_buckets=8,
+                initial_params=[-1.5, -2.6, -3.6, -1.2, -0.8, 0.04, 0.7, 3.6,
+                                #1., 2., 3., 4., 5., 6., 7.
+                                ],
+                minimizer='BFGS',
+                scoring=NegQWKappaScorer):
+
+        self.objective = objective
+        self.learning_rate = learning_rate
+        self.min_child_weight = min_child_weight
+        self.subsample = subsample
+        self.colsample_bytree = colsample_bytree
+        self.max_depth = max_depth
+        self.n_estimators = n_estimators
+        self.nthread = nthread
+        self.seed = seed
+        self.n_buckets = n_buckets
+        self.initial_params = initial_params
+        self.minimizer = minimizer
+        self.scoring = scoring
+
+        return
+
+
+    def fit(self, X, y):
+        from xgboost import XGBRegressor
+        if not KAGGLE:
+            from OptimizedOffsetRegressor import DigitizedOptimizedOffsetRegressor
+
+        #from OptimizedOffsetRegressor import FullDigitizedOptimizedOffsetRegressor
+        #self.off = FullDigitizedOptimizedOffsetRegressor(n_buckets=self.n_buckets,
+        #               basinhopping=True,
+
+        """
+2 / 5
+grid scores:
+  mean: 0.64539, std: 0.00389, params: {'n_estimators': 700, 'subsample': 0.9, 'colsample_bytree': 0.67, 'max_depth': 6, 'min_child_weight': 240}
+best score: 0.64539
+
+3 / 5
+grid scores:
+  mean: 0.65007, std: 0.00436, params: {'n_estimators': 700, 'subsample': 0.9, 'colsample_bytree': 0.67, 'max_depth': 6, 'min_child_weight': 240}
+best score: 0.65007
+
+4 / 5
+grid scores:
+  mean: 0.65336, std: 0.00361, params: {'n_estimators': 700, 'subsample': 0.9, 'colsample_bytree': 0.67, 'max_depth': 6, 'min_child_weight': 240}
+best score: 0.65336
+
+5 / 5
+grid scores:
+  mean: 0.65588, std: 0.00378, params: {'n_estimators': 700, 'subsample': 0.9, 'colsample_bytree': 0.67, 'max_depth': 6, 'min_child_weight': 240}
+best score: 0.65588
+
+6 / 5
+grid scores:
+  mean: 0.65657, std: 0.00316, params: {'n_estimators': 700, 'subsample': 0.9, 'colsample_bytree': 0.67, 'max_depth': 6, 'min_child_weight': 240}
+best score: 0.65657
+
+7 / 5
+grid scores:
+  mean: 0.65622, std: 0.00296, params: {'n_estimators': 700, 'subsample': 0.9, 'colsample_bytree': 0.67, 'max_depth': 6, 'min_child_weight': 240}
+best score: 0.65622
+
+
+8 / 5
+grid scores:
+  mean: 0.65601, std: 0.00372, params: {'n_estimators': 700, 'subsample': 0.9, 'colsample_bytree': 0.67, 'max_depth': 6, 'min_child_weight': 240}
+best score: 0.65601
+
+        """
+
+        from sklearn.cross_validation import StratifiedKFold
+        kf = StratifiedKFold(y, n_folds=6)
+        print(kf)
+        self.xgb = []
+        self.off = []
+        for i, (itrain, itest) in enumerate(kf):
+            ytrain = y[itrain]
+            Xtrain = X.iloc[list(itrain)]
+            ytest = y[itest]
+            Xtest = X.iloc[list(itest)]
+
+            self.xgb += [None]
+            self.xgb[i] = XGBRegressor(
+                           objective=self.objective,
+                           learning_rate=self.learning_rate,
+                           min_child_weight=self.min_child_weight,
+                           subsample=self.subsample,
+                           colsample_bytree=self.colsample_bytree,
+                           max_depth=self.max_depth,
+                           n_estimators=self.n_estimators,
+                           nthread=self.nthread,
+                           missing=0.0,
+                           seed=self.seed)
+            self.xgb[i].fit(Xtrain, ytrain)
+            te_y_hat = self.xgb[i].predict(Xtest,
+                                        ntree_limit=self.xgb[i].booster().best_iteration)
+            print('XGB Test score is:', -self.scoring(te_y_hat, ytest))
+
+            self.off += [None]
+            self.off[i] = DigitizedOptimizedOffsetRegressor(n_buckets=self.n_buckets,
+                           initial_params=self.initial_params,
+                           minimizer=self.minimizer,
+                           scoring=self.scoring)
+            self.off[i].fit(te_y_hat, ytest)
+            print("Offsets:", self.off[i].params)
+            pass
+
+        return self
+
+
+    def predict(self, X):
+        from numpy import clip, array
+        result = []
+        for xgb, off in zip(self.xgb, self.off):
+            te_y_hat = xgb.predict(X, ntree_limit=xgb.booster().best_iteration)
+            result.append(off.predict(te_y_hat))
+        result = clip(array(result).mean(axis=0), 1, 8)
+        return result
+
+    pass
+
 
 def work(out_csv_file,
+         estimator,
          nest,
          njobs,
          nfolds,
@@ -437,12 +588,12 @@ def work(out_csv_file,
     # override kwargs with any changes
     for k, v in clf_kwargs.items():
         prudential_kwargs[k] = v
-    clf = PrudentialRegressorCVO(**prudential_kwargs)
-    print("PrudentialRegressor", clf.get_params())
+    clf = globals()[estimator](**prudential_kwargs)
+    print(estimator, clf.get_params())
 
     if nfolds > 1:
         param_grid={
-                    'n_estimators': [700],
+                    'n_estimators': [600, 700, 800],
                     'max_depth': [6],
                     'colsample_bytree': [0.67],
                     'subsample': [0.9],
@@ -572,6 +723,11 @@ USAGE
             type=str, default="{}", action='store', dest="clf_params",
             help="classifier parameters subset to override defaults")
 
+        parser.add_argument("-E", "--estimator",
+            action='store', dest="estimator", default='PrudentialRegressor',
+            type=str,# choices=['mean', 'median', 'most_frequent'],
+            help="Estimator class to use")
+
         # Process arguments
         args = parser.parse_args()
 
@@ -580,6 +736,7 @@ USAGE
             pass
 
         work(args.out_csv_file,
+             args.estimator,
              args.nest,
              args.njobs,
              args.nfolds,
