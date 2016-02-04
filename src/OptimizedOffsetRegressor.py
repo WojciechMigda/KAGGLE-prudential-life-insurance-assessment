@@ -272,7 +272,7 @@ class FullDigitizedOptimizedOffsetRegressor(BaseEstimator, RegressorMixin):
             'method': self.minimizer,
             'jac': lambda x, args:
                     approx_fprime(x, self.apply_params_and_score, 0.05, args),
-            'tol': 1e-4,
+            'tol': 3e-2 if self.minimizer == 'BFGS' else 1e-4,
             'options': {'disp': True}
             }
 
@@ -287,11 +287,14 @@ class FullDigitizedOptimizedOffsetRegressor(BaseEstimator, RegressorMixin):
             optres = basinhopping(
                 self.apply_params_and_score,
                 self.params,
-                niter=100,
+                niter=250,
                 T=0.05,
                 stepsize=0.10,
                 minimizer_kwargs=minimizer_kwargs)
             minimizer_kwargs['method'] = 'BFGS'
+            minimizer_kwargs['tol'] = 1e-2
+            minimizer_kwargs['jac'] = lambda x, args: \
+                    approx_fprime(x, self.apply_params_and_score, 0.01, args)
             optres = minimize(
                 self.apply_params_and_score,
                 optres.x,
