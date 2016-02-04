@@ -498,6 +498,10 @@ def work(out_csv_file,
 #    from sklearn.preprocessing import Imputer
 #    imp = Imputer(missing_values='NaN', strategy='most_frequent', axis=0)
 #    all_data[DISCRETE] = imp.fit_transform(all_data[DISCRETE])
+#    from numpy import bincount
+#    for col in all_data[DISCRETE]:
+#        top = bincount(all_data[col].astype(int)).argmax()
+#        all_data[col] -= top
 #    imp = Imputer(missing_values='NaN', strategy='median', axis=0)
 #    all_data[CONTINUOUS] = imp.fit_transform(all_data[CONTINUOUS])
 #    all_data[BOOLEANS] = all_data[BOOLEANS] + 1e6
@@ -554,7 +558,7 @@ def work(out_csv_file,
     train = all_data[all_data['Response'] > 0].copy()
     test = all_data[all_data['Response'] < 1].copy()
 
-    dropped_cols = ['Id', 'Response', 'Medical_History_10', 'Medical_History_24']
+    dropped_cols = ['Id', 'Response', 'Medical_History_10', 'Medical_History_24']#, 'Medical_History_32']
 #    dropped_cols = ['Id', 'Response']
 
     train_y = train['Response'].values
@@ -566,8 +570,6 @@ def work(out_csv_file,
         imp = Imputer(missing_values='NaN', strategy=imputer, axis=0)
         train_X = imp.fit_transform(train_X)
         test_X = imp.transform(test_X)
-
-    feature_names = list(train.drop(dropped_cols, axis=1).columns)
 
     prudential_kwargs = \
     {
@@ -593,7 +595,7 @@ def work(out_csv_file,
 
     if nfolds > 1:
         param_grid={
-                    'n_estimators': [600, 700, 800],
+                    'n_estimators': [700],
                     'max_depth': [6],
                     'colsample_bytree': [0.67],
                     'subsample': [0.9],
@@ -635,7 +637,6 @@ def work(out_csv_file,
                 fmt=['%d', '%d'],
                 header='"Id","Response"', comments='')
 
-        clf.xgb.booster().feature_names = feature_names
         importance = clf.xgb.booster().get_fscore()
         import operator
         print(sorted(importance.items()), "\n")
