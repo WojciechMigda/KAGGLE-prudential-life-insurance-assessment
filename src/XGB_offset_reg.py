@@ -564,6 +564,9 @@ class PrudentialRegressorCVO2FO(BaseEstimator, RegressorMixin):
         self.minimizer = minimizer
         self.scoring = scoring
 
+        from numpy.random import seed as random_seed
+        random_seed(seed)
+
         return
 
 
@@ -572,7 +575,7 @@ class PrudentialRegressorCVO2FO(BaseEstimator, RegressorMixin):
         from OptimizedOffsetRegressor import FullDigitizedOptimizedOffsetRegressor
 
         from sklearn.cross_validation import StratifiedKFold
-        kf = StratifiedKFold(y, n_folds=8)
+        kf = StratifiedKFold(y, n_folds=6)
         print(kf)
         self.xgb = []
         self.off = []
