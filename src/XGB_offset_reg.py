@@ -544,6 +544,7 @@ class PrudentialRegressorCVO2FO(BaseEstimator, RegressorMixin):
                 nthread=-1,
                 seed=0,
                 n_buckets=8,
+                int_fold=6,
                 initial_params=[-1.5, -2.6, -3.6, -1.2, -0.8, 0.04, 0.7, 3.6,
                                 #1., 2., 3., 4., 5., 6., 7.
                                 ],
@@ -560,6 +561,7 @@ class PrudentialRegressorCVO2FO(BaseEstimator, RegressorMixin):
         self.nthread = nthread
         self.seed = seed
         self.n_buckets = n_buckets
+        self.int_fold = int_fold
         self.initial_params = initial_params
         self.minimizer = minimizer
         self.scoring = scoring
@@ -576,7 +578,7 @@ class PrudentialRegressorCVO2FO(BaseEstimator, RegressorMixin):
         from OptimizedOffsetRegressor import FullDigitizedOptimizedOffsetRegressor
 
         from sklearn.cross_validation import StratifiedKFold
-        kf = StratifiedKFold(y, n_folds=6)
+        kf = StratifiedKFold(y, n_folds=self.int_fold)
         print(kf)
         self.xgb = []
         self.off = []
@@ -598,10 +600,10 @@ class PrudentialRegressorCVO2FO(BaseEstimator, RegressorMixin):
                            nthread=self.nthread,
                            missing=0.0,
                            seed=self.seed)
-            self.xgb[i].fit(Xtrain, ytrain, obj=kapparegobj)
+            self.xgb[i].fit(Xtrain, ytrain)#, obj=kapparegobj)
             te_y_hat = self.xgb[i].predict(Xtest,
                                         ntree_limit=self.xgb[i].booster().best_iteration)
-            print('XGB Test score is:', -self.scoring(te_y_hat, ytest))
+            print('XGB[{}] Test score is:'.format(i + 1), -self.scoring(te_y_hat, ytest))
 
             self.off += [None]
             self.off[i] = FullDigitizedOptimizedOffsetRegressor(n_buckets=self.n_buckets,
@@ -610,7 +612,7 @@ class PrudentialRegressorCVO2FO(BaseEstimator, RegressorMixin):
                            minimizer=self.minimizer,
                            scoring=self.scoring)
             self.off[i].fit(te_y_hat, ytest)
-            print("Offsets:", self.off[i].params)
+            print("Offsets[{}]:".format(i + 1), self.off[i].params)
             pass
 
         return self
@@ -652,11 +654,13 @@ def work(out_csv_file,
          nest,
          njobs,
          nfolds,
+         cv_grid,
          minimizer,
          nbuckets,
          mvector,
          imputer,
-         clf_kwargs):
+         clf_kwargs,
+         int_fold):
 
 
     from zipfile import ZipFile
@@ -789,6 +793,10 @@ def work(out_csv_file,
         'minimizer': minimizer,
         'scoring': NegQWKappaScorer
     }
+    if estimator == 'PrudentialRegressorCVO2FO':
+        prudential_kwargs['int_fold'] = int_fold
+        pass
+
     # override kwargs with any changes
     for k, v in clf_kwargs.items():
         prudential_kwargs[k] = v
@@ -796,7 +804,7 @@ def work(out_csv_file,
     print(estimator, clf.get_params())
 
     if nfolds > 1:
-        param_grid={
+        param_grid = {
                     'n_estimators': [700],
                     'max_depth': [6],
                     'colsample_bytree': [0.67],
@@ -804,6 +812,9 @@ def work(out_csv_file,
                     'min_child_weight': [240],
                     #'initial_params': [[-0.71238755, -1.4970176, -1.73800531, -1.13361266, -0.82986203, -0.06473039, 0.69008725, 0.94815881]]
                     }
+        for k, v in cv_grid.items():
+            param_grid[k] = v
+
         from sklearn.metrics import make_scorer
         MIN, MAX = (1, 8)
         qwkappa = make_scorer(Kappa, weights='quadratic',
@@ -905,6 +916,10 @@ USAGE
             type=int, default=0, action='store', dest="nfolds",
             help="number of cross-validation folds")
 
+        parser.add_argument("--int-fold",
+            type=int, default=6, action='store', dest="int_fold",
+            help="internal fold for PrudentialRegressorCVO2FO")
+
         parser.add_argument("-b", "--n-buckets",
             type=int, default=8, action='store', dest="nbuckets",
             help="number of buckets for digitizer")
@@ -933,6 +948,10 @@ USAGE
             type=str, default="{}", action='store', dest="clf_params",
             help="classifier parameters subset to override defaults")
 
+        parser.add_argument("-G", "--cv-grid",
+            type=str, default="{}", action='store', dest="cv_grid",
+            help="cross-validation grid params (used if NFOLDS > 0)")
+
         parser.add_argument("-E", "--estimator",
             action='store', dest="estimator", default='PrudentialRegressor',
             type=str,# choices=['mean', 'median', 'most_frequent'],
@@ -950,11 +969,13 @@ USAGE
              args.nest,
              args.njobs,
              args.nfolds,
+             eval(args.cv_grid),
              args.minimizer,
              args.nbuckets,
              args.mvector,
              args.imputer,
-             eval(args.clf_params))
+             eval(args.clf_params),
+             args.int_fold)
 
 
         return 0
