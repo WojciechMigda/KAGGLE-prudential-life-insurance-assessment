@@ -571,7 +571,8 @@ class PrudentialRegressorCVO2FO(BaseEstimator, RegressorMixin):
 
 
     def fit(self, X, y):
-        from xgboost import XGBRegressor
+        #from xgboost import XGBRegressor
+        from xgb_sklearn import XGBRegressor
         from OptimizedOffsetRegressor import FullDigitizedOptimizedOffsetRegressor
 
         from sklearn.cross_validation import StratifiedKFold
@@ -597,7 +598,7 @@ class PrudentialRegressorCVO2FO(BaseEstimator, RegressorMixin):
                            nthread=self.nthread,
                            missing=0.0,
                            seed=self.seed)
-            self.xgb[i].fit(Xtrain, ytrain)
+            self.xgb[i].fit(Xtrain, ytrain, obj=kapparegobj)
             te_y_hat = self.xgb[i].predict(Xtest,
                                         ntree_limit=self.xgb[i].booster().best_iteration)
             print('XGB Test score is:', -self.scoring(te_y_hat, ytest))
@@ -625,6 +626,25 @@ class PrudentialRegressorCVO2FO(BaseEstimator, RegressorMixin):
         return result
 
     pass
+
+
+def kapparegobj(preds, dtrain):
+    labels = dtrain.get_label()
+    x = (preds - labels)
+    from numpy import exp as npexp
+    grad = 2 * x * npexp(-(x ** 2)) * (npexp(x ** 2) + x ** 2 + 1)
+    hess = 2 * npexp(-(x ** 2)) * (npexp(x ** 2) - 2 * (x ** 4) + 5 * (x ** 2) - 1)
+    return grad, hess
+
+
+#def kappaerror(preds, dtrain):
+#    labels = dtrain.get_label()
+#    x = (labels - preds)
+#    from numpy import exp as npexp
+#    error = (x ** 2) * (1 - npexp(-(x ** 2)))
+#    from numpy import mean
+#    return 'error', mean(error)
+
 
 
 def work(out_csv_file,
@@ -678,6 +698,15 @@ def work(out_csv_file,
 #    imp = Imputer(missing_values='NaN', strategy='median', axis=0)
 #    all_data[CONTINUOUS] = imp.fit_transform(all_data[CONTINUOUS])
 #    all_data[BOOLEANS] = all_data[BOOLEANS] + 1e6
+
+
+#    from sklearn.preprocessing import StandardScaler
+#    from sklearn.decomposition import PCA
+#    std = StandardScaler(copy=True)
+#    all_data[CONTINUOUS] = std.fit_transform(all_data[CONTINUOUS])
+#    pca = PCA(whiten=False, copy=True)
+#    all_data[CONTINUOUS] = pca.fit_transform(all_data[CONTINUOUS])
+
 
     # create any new variables
     all_data['Product_Info_2_char'] = all_data.Product_Info_2.str[0]
