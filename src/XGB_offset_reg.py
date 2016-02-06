@@ -566,29 +566,43 @@ class PrudentialRegressorCVO2FO(BaseEstimator, RegressorMixin):
         self.minimizer = minimizer
         self.scoring = scoring
 
-        from numpy.random import seed as random_seed
-        random_seed(seed)
+#        from numpy.random import seed as random_seed
+#        random_seed(seed)
 
         return
 
 
-    def fit(self, X, y):
-        #from xgboost import XGBRegressor
-        from xgb_sklearn import XGBRegressor
-        from OptimizedOffsetRegressor import FullDigitizedOptimizedOffsetRegressor
+    def __call__(self, i, te_y_hat, ytest):
+        print('XGB[{}] Test score is:'.format(i + 1), -self.scoring(te_y_hat, ytest))
 
+        from OptimizedOffsetRegressor import FullDigitizedOptimizedOffsetRegressor
+        off = FullDigitizedOptimizedOffsetRegressor(n_buckets=self.n_buckets,
+                       basinhopping=True,
+                       initial_params=self.initial_params,
+                       minimizer=self.minimizer,
+                       scoring=self.scoring)
+        off.fit(te_y_hat, ytest)
+        print("Offsets[{}]:".format(i + 1), off.params)
+
+        return off
+
+
+    def fit(self, X, y):
         from sklearn.cross_validation import StratifiedKFold
         kf = StratifiedKFold(y, n_folds=self.int_fold)
         print(kf)
         self.xgb = []
         self.off = []
-        for i, (itrain, itest) in enumerate(kf):
+
+        datamap = {i: (itrain, itest) for i, (itrain, itest) in enumerate(kf)}
+
+        for i, (itrain, _) in datamap.items():
             ytrain = y[itrain]
             Xtrain = X.iloc[list(itrain)]
-            ytest = y[itest]
-            Xtest = X.iloc[list(itest)]
-
             self.xgb += [None]
+
+            #from xgboost import XGBRegressor
+            from xgb_sklearn import XGBRegressor
             self.xgb[i] = XGBRegressor(
                            objective=self.objective,
                            learning_rate=self.learning_rate,
@@ -601,20 +615,20 @@ class PrudentialRegressorCVO2FO(BaseEstimator, RegressorMixin):
                            missing=0.0,
                            seed=self.seed)
             self.xgb[i].fit(Xtrain, ytrain)#, obj=kapparegobj)
-            te_y_hat = self.xgb[i].predict(Xtest,
-                                        ntree_limit=self.xgb[i].booster().best_iteration)
-            print('XGB[{}] Test score is:'.format(i + 1), -self.scoring(te_y_hat, ytest))
-
-            self.off += [None]
-            self.off[i] = FullDigitizedOptimizedOffsetRegressor(n_buckets=self.n_buckets,
-                           basinhopping=True,
-                           initial_params=self.initial_params,
-                           minimizer=self.minimizer,
-                           scoring=self.scoring)
-            self.off[i].fit(te_y_hat, ytest)
-            print("Offsets[{}]:".format(i + 1), self.off[i].params)
             pass
 
+        from joblib import Parallel, delayed
+        from sklearn.base import clone
+        off = Parallel(
+            n_jobs=self.nthread, verbose=2,
+            #pre_dispatch='n_jobs',
+        )(
+            delayed(clone(self))(i,
+                         self.xgb[i].predict(X.iloc[list(itest)],
+                               ntree_limit=self.xgb[i].booster().best_iteration),
+                         y[itest])
+                         for i, (_, itest) in datamap.items())
+        self.off = off
         return self
 
 
@@ -661,6 +675,9 @@ def work(out_csv_file,
          imputer,
          clf_kwargs,
          int_fold):
+
+    from numpy.random import seed as random_seed
+    random_seed(1)
 
 
     from zipfile import ZipFile
