@@ -96,6 +96,7 @@ def OneHot(df, colnames):
 def Kappa(y_true, y_pred, **kwargs):
     if not KAGGLE:
         from skll import kappa
+        #from kappa import kappa
     return kappa(y_true, y_pred, **kwargs)
 
 
@@ -409,6 +410,7 @@ class PrudentialRegressorCVO2(BaseEstimator, RegressorMixin):
                 nthread=-1,
                 seed=0,
                 n_buckets=8,
+                int_fold=6,
                 initial_params=[-1.5, -2.6, -3.6, -1.2, -0.8, 0.04, 0.7, 3.6,
                                 #1., 2., 3., 4., 5., 6., 7.
                                 ],
@@ -425,6 +427,7 @@ class PrudentialRegressorCVO2(BaseEstimator, RegressorMixin):
         self.nthread = nthread
         self.seed = seed
         self.n_buckets = n_buckets
+        self.int_fold = int_fold
         self.initial_params = initial_params
         self.minimizer = minimizer
         self.scoring = scoring
@@ -442,46 +445,21 @@ class PrudentialRegressorCVO2(BaseEstimator, RegressorMixin):
         #               basinhopping=True,
 
         """
-2 / 5
+5-fold Stratified CV
 grid scores:
-  mean: 0.64539, std: 0.00389, params: {'n_estimators': 700, 'subsample': 0.9, 'colsample_bytree': 0.67, 'max_depth': 6, 'min_child_weight': 240}
-best score: 0.64539
-
-3 / 5
-grid scores:
-  mean: 0.65007, std: 0.00436, params: {'n_estimators': 700, 'subsample': 0.9, 'colsample_bytree': 0.67, 'max_depth': 6, 'min_child_weight': 240}
-best score: 0.65007
-
-4 / 5
-grid scores:
-  mean: 0.65336, std: 0.00361, params: {'n_estimators': 700, 'subsample': 0.9, 'colsample_bytree': 0.67, 'max_depth': 6, 'min_child_weight': 240}
-best score: 0.65336
-
-5 / 5
-grid scores:
-  mean: 0.65588, std: 0.00378, params: {'n_estimators': 700, 'subsample': 0.9, 'colsample_bytree': 0.67, 'max_depth': 6, 'min_child_weight': 240}
-best score: 0.65588
-
-6 / 5
-grid scores:
-  mean: 0.65657, std: 0.00316, params: {'n_estimators': 700, 'subsample': 0.9, 'colsample_bytree': 0.67, 'max_depth': 6, 'min_child_weight': 240}
-best score: 0.65657
-
-7 / 5
-grid scores:
-  mean: 0.65622, std: 0.00296, params: {'n_estimators': 700, 'subsample': 0.9, 'colsample_bytree': 0.67, 'max_depth': 6, 'min_child_weight': 240}
-best score: 0.65622
-
-
-8 / 5
-grid scores:
-  mean: 0.65601, std: 0.00372, params: {'n_estimators': 700, 'subsample': 0.9, 'colsample_bytree': 0.67, 'max_depth': 6, 'min_child_weight': 240}
-best score: 0.65601
+  mean: 0.64475, std: 0.00483, params: {'colsample_bytree': 0.67, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 2, 'max_depth': 6}
+  mean: 0.64926, std: 0.00401, params: {'colsample_bytree': 0.67, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 3, 'max_depth': 6}
+  mean: 0.65281, std: 0.00384, params: {'colsample_bytree': 0.67, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 4, 'max_depth': 6}
+  mean: 0.65471, std: 0.00422, params: {'colsample_bytree': 0.67, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 5, 'max_depth': 6}
+  mean: 0.65563, std: 0.00440, params: {'colsample_bytree': 0.67, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 6, 'max_depth': 6}
+  mean: 0.65635, std: 0.00433, params: {'colsample_bytree': 0.67, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 6}
+best score: 0.65635
+best params: {'colsample_bytree': 0.67, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 6}
 
         """
 
         from sklearn.cross_validation import StratifiedKFold
-        kf = StratifiedKFold(y, n_folds=6)
+        kf = StratifiedKFold(y, n_folds=self.int_fold)
         print(kf)
         self.xgb = []
         self.off = []
@@ -810,7 +788,7 @@ def work(out_csv_file,
         'minimizer': minimizer,
         'scoring': NegQWKappaScorer
     }
-    if estimator == 'PrudentialRegressorCVO2FO':
+    if estimator == 'PrudentialRegressorCVO2FO' or estimator == 'PrudentialRegressorCVO2':
         prudential_kwargs['int_fold'] = int_fold
         pass
 
