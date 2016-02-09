@@ -141,7 +141,7 @@ class DigitizedOptimizedOffsetRegressor(BaseEstimator, RegressorMixin):
 
     def apply_params(self, params, data):
         from numpy import digitize
-        offsets = params[:self.n_buckets]
+        offsets = params[:self.n_buckets][::-1]
 
         # both give #40: 0.67261
         splits = [1., 2., 3., 4., 5., 6., 7.]
