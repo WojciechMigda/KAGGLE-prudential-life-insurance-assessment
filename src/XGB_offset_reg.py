@@ -436,7 +436,6 @@ class PrudentialRegressorCVO2(BaseEstimator, RegressorMixin):
 
 
     def fit(self, X, y):
-        from xgboost import XGBRegressor
         if not KAGGLE:
             from OptimizedOffsetRegressor import DigitizedOptimizedOffsetRegressor
 
@@ -453,8 +452,32 @@ grid scores:
   mean: 0.65471, std: 0.00422, params: {'colsample_bytree': 0.67, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 5, 'max_depth': 6}
   mean: 0.65563, std: 0.00440, params: {'colsample_bytree': 0.67, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 6, 'max_depth': 6}
   mean: 0.65635, std: 0.00433, params: {'colsample_bytree': 0.67, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 6}
+  mean: 0.65600, std: 0.00471, params: {'colsample_bytree': 0.67, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 8, 'max_depth': 6}
 best score: 0.65635
 best params: {'colsample_bytree': 0.67, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 6}
+
+
+reversed params [8 bins]:
+  mean: 0.65588, std: 0.00417, params: {'colsample_bytree': 0.67, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 6, 'max_depth': 6}
+  mean: 0.65640, std: 0.00438, params: {'colsample_bytree': 0.67, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 6}
+
+
+with Scirpus obj
+grid scores:
+  mean: 0.65775, std: 0.00429, params: {'colsample_bytree': 0.67, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 6}
+best score: 0.65775
+
++1 na trzech Product_info_2*
+  mean: 0.65555, std: 0.00462, params: {'colsample_bytree': 0.67, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 6, 'max_depth': 6}
+  mean: 0.65613, std: 0.00438, params: {'colsample_bytree': 0.67, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 6}
+
+DISCRETE: NaN=most_common, +Medical_History_10,24, (24 jest znaczacy)
+  mean: 0.65589, std: 0.00490, params: {'colsample_bytree': 0.67, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 6}
+
+
+PROPER DATA + Scirpus + reversed params + no-drops
+  mean: 0.65783, std: 0.00444, params: {'colsample_bytree': 0.67, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 6}
+
 
         """
 
@@ -470,6 +493,9 @@ best params: {'colsample_bytree': 0.67, 'min_child_weight': 240, 'n_estimators':
             Xtest = X.iloc[list(itest)]
 
             self.xgb += [None]
+
+            from xgb_sklearn import XGBRegressor
+            #from xgboost import XGBRegressor
             self.xgb[i] = XGBRegressor(
                            objective=self.objective,
                            learning_rate=self.learning_rate,
@@ -481,7 +507,7 @@ best params: {'colsample_bytree': 0.67, 'min_child_weight': 240, 'n_estimators':
                            nthread=self.nthread,
                            missing=0.0,
                            seed=self.seed)
-            self.xgb[i].fit(Xtrain, ytrain)
+            self.xgb[i].fit(Xtrain, ytrain, obj=kapparegobj)
             te_y_hat = self.xgb[i].predict(Xtest,
                                         ntree_limit=self.xgb[i].booster().best_iteration)
             print('XGB Test score is:', -self.scoring(te_y_hat, ytest))
@@ -590,9 +616,9 @@ class PrudentialRegressorCVO2FO(BaseEstimator, RegressorMixin):
                            max_depth=self.max_depth,
                            n_estimators=self.n_estimators,
                            nthread=self.nthread,
-                           missing=0.0,
+                           missing=0.0 + 1e6,
                            seed=self.seed)
-            self.xgb[i].fit(Xtrain, ytrain)#, obj=kapparegobj)
+            self.xgb[i].fit(Xtrain, ytrain, obj=kapparegobj)
             pass
 
         from joblib import Parallel, delayed
@@ -687,15 +713,15 @@ def work(out_csv_file,
 #    all_data = all_data.join(
 #        G_vectors[['G8', 'G11', 'G12', 'G13', 'G17', 'G18', 'G19', 'G20']])
 
-#    from sklearn.preprocessing import Imputer
-#    imp = Imputer(missing_values='NaN', strategy='most_frequent', axis=0)
-#    all_data[DISCRETE] = imp.fit_transform(all_data[DISCRETE])
+    from sklearn.preprocessing import Imputer
+    imp = Imputer(missing_values='NaN', strategy='median', axis=0)
+    all_data[DISCRETE] = imp.fit_transform(all_data[DISCRETE])
 #    from numpy import bincount
 #    for col in all_data[DISCRETE]:
 #        top = bincount(all_data[col].astype(int)).argmax()
 #        all_data[col] -= top
-#    imp = Imputer(missing_values='NaN', strategy='median', axis=0)
-#    all_data[CONTINUOUS] = imp.fit_transform(all_data[CONTINUOUS])
+    imp = Imputer(missing_values='NaN', strategy='median', axis=0)
+    all_data[CONTINUOUS] = imp.fit_transform(all_data[CONTINUOUS])
 #    all_data[BOOLEANS] = all_data[BOOLEANS] + 1e6
 
 
@@ -711,6 +737,7 @@ def work(out_csv_file,
     all_data['Product_Info_2_char'] = all_data.Product_Info_2.str[0]
     all_data['Product_Info_2_num'] = all_data.Product_Info_2.str[1]
 
+
     # factorize categorical variables
     all_data['Product_Info_2'] = factorize(all_data['Product_Info_2'])[0]# + 1
     all_data['Product_Info_2_char'] = factorize(all_data['Product_Info_2_char'])[0]# + 1
@@ -725,9 +752,6 @@ def work(out_csv_file,
     all_data['BMI_Age'] = all_data['BMI'] * all_data['Ins_Age']
     med_keyword_columns = all_data.columns[all_data.columns.str.startswith('Medical_Keyword_')]
     all_data['Med_Keywords_Count'] = all_data[med_keyword_columns].sum(axis=1)
-
-    #all_data = OneHot(all_data, ['Employment_Info_2', 'Employment_Info_3'])
-    #all_data = all_data.drop(ranked_features[100:], axis=1)
 
 
     """
@@ -759,8 +783,8 @@ def work(out_csv_file,
     train = all_data[all_data['Response'] > 0].copy()
     test = all_data[all_data['Response'] < 1].copy()
 
-    dropped_cols = ['Id', 'Response', 'Medical_History_10', 'Medical_History_24']#, 'Medical_History_32']
-#    dropped_cols = ['Id', 'Response']
+    #dropped_cols = ['Id', 'Response', 'Medical_History_10', 'Medical_History_24']#, 'Medical_History_32']
+    dropped_cols = ['Id', 'Response']
 
     train_y = train['Response'].values
     train_X = train.drop(dropped_cols, axis=1)
