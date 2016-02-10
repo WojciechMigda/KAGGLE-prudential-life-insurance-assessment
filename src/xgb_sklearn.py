@@ -132,7 +132,8 @@ class XGBModel(XGBModelBase):
         return xgb_params
 
     def fit(self, X, y, eval_set=None, eval_metric=None,
-            early_stopping_rounds=None, verbose=True, obj=None):
+            early_stopping_rounds=None, verbose=True, obj=None,
+            learning_rates=None):
         # pylint: disable=missing-docstring,invalid-name,attribute-defined-outside-init
         """
         Fit the gradient boosting model
@@ -188,7 +189,8 @@ class XGBModel(XGBModelBase):
                               self.n_estimators, evals=evals,
                               early_stopping_rounds=early_stopping_rounds,
                               evals_result=evals_result, feval=feval,
-                              verbose_eval=verbose, obj=obj)
+                              verbose_eval=verbose, obj=obj,
+                              learning_rates=learning_rates)
 
         if evals_result:
             for val in evals_result.items():
