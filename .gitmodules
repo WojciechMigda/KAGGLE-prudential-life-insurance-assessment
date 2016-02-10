@@ -4,3 +4,6 @@
 [submodule "mlpipes"]
 	path = src/mlpipes
 	url = https://github.com/WojciechMigda/mlpipes
+[submodule "src/hyperopt"]
+	path = src/hyperopt
+	url = https://github.com/hyperopt/hyperopt
