@@ -478,6 +478,35 @@ DISCRETE: NaN=most_common, +Medical_History_10,24, (24 jest znaczacy)
 PROPER DATA + Scirpus + reversed params + no-drops
   mean: 0.65783, std: 0.00444, params: {'colsample_bytree': 0.67, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 6}
 
+PROPER DATA + Scirpus + reversed params + no-drops, EVAL_SET@30.RMSE
+  mean: 0.65790, std: 0.00421, params: {'colsample_bytree': 0.67, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 6}
+
+jak wyzej, max_depth=7
+  mean: 0.65802, std: 0.00420, params: {'colsample_bytree': 0.67, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 7}
+
+jak wyzej, max_depth=10
+  mean: 0.65833, std: 0.00387, params: {'colsample_bytree': 0.67, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10}
+
+jak wyzej, max_depth=10, eta=0.03
+  mean: 0.65888, std: 0.00391, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10}
+
+jak wyzej, max_depth=30, eta=0.02
+  mean: 0.65798, std: 0.00340, params: {'colsample_bytree': 0.67, 'learning_rate': 0.02, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 30}
+
+jak wyzej, max_depth=10, eta=0.03, eval_metric=Scirpus
+  mean: 0.65891, std: 0.00395, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10}
+
+jak wyzej, max_depth=10, eta=0.03, eval_metric=QWKappa
+  mean: 0.65827, std: 0.00368, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10}
+
+
+jak wyzej, max_depth=10, eta=0.03, eval_metric=Scirpus, GMM6,GMM17
+  mean: 0.65862, std: 0.00423, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10}
+jak wyzej, max_depth=10, eta=0.03, eval_metric=Scirpus, Gvector
+  mean: 0.65864, std: 0.00384, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10}
+
+jak wyzej, max_depth=10, eta=0.03, eval_metric=Scirpus, learning_rates=[0.03] * 200 + [0.02] * 500,
+  mean: 0.65910, std: 0.00384, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10}
 
         """
 
@@ -507,7 +536,19 @@ PROPER DATA + Scirpus + reversed params + no-drops
                            nthread=self.nthread,
                            missing=0.0,
                            seed=self.seed)
-            self.xgb[i].fit(Xtrain, ytrain, obj=kapparegobj)
+            self.xgb[i].fit(Xtrain, ytrain,
+                            eval_set=[(Xtest, ytest)],
+                            #eval_metric=self.scoring,
+                            #eval_metric='rmse',
+                            eval_metric=scirpus_error,
+                            #eval_metric=qwkappa_error,
+                            verbose=False,
+                            early_stopping_rounds=30,
+                            #learning_rates=[self.learning_rate] * 200 + [0.02] * 500,
+                            obj=scirpus_regobj
+                            #obj=qwkappa_regobj
+                            )
+            print("best iteration:", self.xgb[i].booster().best_iteration)
             te_y_hat = self.xgb[i].predict(Xtest,
                                         ntree_limit=self.xgb[i].booster().best_iteration)
             print('XGB Test score is:', -self.scoring(te_y_hat, ytest))
@@ -618,7 +659,7 @@ class PrudentialRegressorCVO2FO(BaseEstimator, RegressorMixin):
                            nthread=self.nthread,
                            missing=0.0 + 1e6,
                            seed=self.seed)
-            self.xgb[i].fit(Xtrain, ytrain, obj=kapparegobj)
+            self.xgb[i].fit(Xtrain, ytrain, obj=scirpus_regobj)
             pass
 
         from joblib import Parallel, delayed
@@ -648,7 +689,7 @@ class PrudentialRegressorCVO2FO(BaseEstimator, RegressorMixin):
     pass
 
 
-def kapparegobj(preds, dtrain):
+def scirpus_regobj(preds, dtrain):
     labels = dtrain.get_label()
     x = (preds - labels)
     from numpy import exp as npexp
@@ -657,14 +698,38 @@ def kapparegobj(preds, dtrain):
     return grad, hess
 
 
-#def kappaerror(preds, dtrain):
-#    labels = dtrain.get_label()
-#    x = (labels - preds)
-#    from numpy import exp as npexp
-#    error = (x ** 2) * (1 - npexp(-(x ** 2)))
-#    from numpy import mean
-#    return 'error', mean(error)
+def scirpus_error(preds, dtrain):
+    labels = dtrain.get_label()
+    x = (labels - preds)
+    from numpy import exp as npexp
+    error = (x ** 2) * (1 - npexp(-(x ** 2)))
+    from numpy import mean
+    return 'error', mean(error)
 
+
+def qwkappa_error(preds, dtrain):
+    labels = dtrain.get_label()
+    kappa = NegQWKappaScorer(labels, preds)
+    return 'kappa', kappa
+
+
+def qwkappa_regobj(preds, dtrain):
+    labels = dtrain.get_label()
+
+    work = preds.copy()
+    from numpy import empty_like
+    grad = empty_like(preds)
+    for i in range(len(preds)):
+        work[i] += 1
+        score = NegQWKappaScorer(labels, work)
+        work[i] -= 2
+        grad[i] = (score - NegQWKappaScorer(labels, work)) / 2.
+        work[i] += 1
+        pass
+
+    from numpy import ones
+    hess = ones(len(preds)) / len(preds)
+    return grad, hess
 
 
 def work(out_csv_file,
