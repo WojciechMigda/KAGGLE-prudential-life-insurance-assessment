@@ -177,6 +177,21 @@ class DigitizedOptimizedOffsetRegressor(BaseEstimator, RegressorMixin):
             }
 
         if not self.basinhopping:
+#            from sys import path as sys_path
+#            sys_path.insert(0, './hyperopt')
+#            from hyperopt import fmin, tpe, hp
+#            space = {i: hp.uniform(str(i), -4, 4) for i in range(self.n_buckets)}
+#            #from hyperopt import Trials
+#            #trials = Trials()
+#            best = fmin(fn=lambda space: self.apply_params_and_score([space[i] for i in range(self.n_buckets)], data),
+#                        space=space,
+#                        algo=tpe.suggest,
+#                        max_evals=1000,
+#                        #trials=trials
+#                        )
+#            print(best, self.apply_params_and_score([best[str(i)] for i in range(self.n_buckets)], data))
+
+
             optres = minimize(
                 self.apply_params_and_score,
                 self.params,
