@@ -144,10 +144,17 @@ class DigitizedOptimizedOffsetRegressor(BaseEstimator, RegressorMixin):
         offsets = params[:self.n_buckets][::-1]
 
         # both give #40: 0.67261
-        splits = [1., 2., 3., 4., 5., 6., 7.]
-        response = digitize(data[0], splits)
+        #splits = [1., 2., 3., 4., 5., 6., 7.]
+        #response = digitize(data[0], splits)
         #splits = [2., 3., 4., 5., 6., 7., 8.]
         #response = digitize(data[0], splits) + 1
+
+        from numpy import linspace
+        splits = linspace(0, 7, self.n_buckets + 1)[1:-1] + 1
+        #print(splits)
+        response = digitize(data[0], splits)
+        #from numpy import bincount
+        #print(bincount(response))
 
         for i, off in enumerate(offsets):
             mask = response == i

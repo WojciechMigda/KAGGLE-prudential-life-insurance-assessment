@@ -81,6 +81,25 @@ DISCRETE = ['Medical_History_1', 'Medical_History_10', 'Medical_History_15',
 
 BOOLEANS = ['Medical_Keyword_' + str(i + 1) for i in range(48)]
 
+
+def CSV_w_coro():
+    with open('xgbgen.csv', 'w') as f:
+        while True:
+            arr = yield
+            f.write(','.join([str(x) for x in arr]) + '\n')
+    pass
+#it = CSV_w_coro()
+#next(it)
+
+def CSV_r_coro():
+    with open('xgbgen.csv', 'r') as f:
+        lines = f.readlines()
+        for l in lines:
+            from numpy import asarray
+            yield asarray(l.strip().split(','))
+it = CSV_r_coro()
+
+
 def OneHot(df, colnames):
     from pandas import get_dummies, concat
     for col in colnames:
@@ -402,6 +421,7 @@ class PrudentialRegressorCVO2(BaseEstimator, RegressorMixin):
     def __init__(self,
                 objective='reg:linear',
                 learning_rate=0.045,
+                learning_rates=None,
                 min_child_weight=50,
                 subsample=0.8,
                 colsample_bytree=0.7,
@@ -419,6 +439,7 @@ class PrudentialRegressorCVO2(BaseEstimator, RegressorMixin):
 
         self.objective = objective
         self.learning_rate = learning_rate
+        self.learning_rates = learning_rates
         self.min_child_weight = min_child_weight
         self.subsample = subsample
         self.colsample_bytree = colsample_bytree
@@ -508,6 +529,17 @@ jak wyzej, max_depth=10, eta=0.03, eval_metric=Scirpus, Gvector
 jak wyzej, max_depth=10, eta=0.03, eval_metric=Scirpus, learning_rates=[0.03] * 200 + [0.02] * 500,
   mean: 0.65910, std: 0.00384, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10}
 
+jak wyzej, +nowy bucketing (max_depth=10, eta=0.03, eval_metric=Scirpus, learning_rates=[0.03] * 200 + [0.02] * 500,)
+  n_buckets=7:
+  mean: 0.65876, std: 0.00405, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10}
+  n_buckets=8:
+  mean: 0.65966, std: 0.00412, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10}
+  n_buckets=9:
+  mean: 0.65965, std: 0.00390, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10}
+  n_buckets=10:
+  mean: 0.65359, std: 0.00405, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10}
+  n_buckets=12:
+  mean: 0.65705, std: 0.00442, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10}
         """
 
         from sklearn.cross_validation import StratifiedKFold
@@ -544,7 +576,7 @@ jak wyzej, max_depth=10, eta=0.03, eval_metric=Scirpus, learning_rates=[0.03] * 
                             #eval_metric=qwkappa_error,
                             verbose=False,
                             early_stopping_rounds=30,
-                            #learning_rates=[self.learning_rate] * 200 + [0.02] * 500,
+                            learning_rates=self.learning_rates,
                             obj=scirpus_regobj
                             #obj=qwkappa_regobj
                             )
