@@ -71,6 +71,35 @@ NOMINALS = ['Product_Info_1', 'Product_Info_2', 'Product_Info_3',
             'Medical_History_37', 'Medical_History_38', 'Medical_History_39',
             'Medical_History_40', 'Medical_History_41']
 
+NOMINALS_2 = ['Product_Info_1', 'Product_Info_5', 'Product_Info_6',
+              'Employment_Info_3', 'Employment_Info_5', 'InsuredInfo_2',
+              'InsuredInfo_4', 'InsuredInfo_5', 'InsuredInfo_6', 'InsuredInfo_7',
+              'Insurance_History_1', 'Medical_History_4', 'Medical_History_22']
+
+NOMINALS_3 = ['Product_Info_7', 'InsuredInfo_1', 'Insurance_History_2',
+              'Insurance_History_3', 'Insurance_History_4', 'Insurance_History_7',
+              'Insurance_History_8', 'Insurance_History_9', 'Family_Hist_1',
+              'Medical_History_3', 'Medical_History_5',
+              'Medical_History_6', 'Medical_History_7', 'Medical_History_8',
+              'Medical_History_9', 'Medical_History_11', 'Medical_History_12',
+              'Medical_History_13', 'Medical_History_14', 'Medical_History_16',
+              'Medical_History_17', 'Medical_History_18', 'Medical_History_19',
+              'Medical_History_20', 'Medical_History_21',
+             'Medical_History_23', 'Medical_History_25', 'Medical_History_26',
+             'Medical_History_27', 'Medical_History_28', 'Medical_History_29',
+             'Medical_History_30', 'Medical_History_31', 'Medical_History_33',
+             'Medical_History_34', 'Medical_History_35', 'Medical_History_36',
+             'Medical_History_37', 'Medical_History_38', 'Medical_History_39',
+             'Medical_History_40', 'Medical_History_41']
+
+NOMINALS_GE4 = [
+    'Product_Info_2', # 19
+    'Product_Info_3', # 38
+    'Employment_Info_2', # 38
+    'InsuredInfo_3', # 11
+    'Medical_History_2' # 628
+    ]
+
 CONTINUOUS = ['Product_Info_4', 'Ins_Age', 'Ht', 'Wt', 'BMI',
               'Employment_Info_1', 'Employment_Info_4', 'Employment_Info_6',
               'Insurance_History_5', 'Family_Hist_2', 'Family_Hist_3',
@@ -949,7 +978,6 @@ def work(out_csv_file,
     all_data[CONTINUOUS] = imp.fit_transform(all_data[CONTINUOUS])
 #    all_data[BOOLEANS] = all_data[BOOLEANS] + 1e6
 
-
 #    from sklearn.preprocessing import StandardScaler
 #    from sklearn.decomposition import PCA
 #    std = StandardScaler(copy=True)
@@ -974,10 +1002,26 @@ def work(out_csv_file,
     MedCount: 0.65638
     None: 0.65529
     """
-    all_data['BMI_Age'] = all_data['BMI'] * all_data['Ins_Age']
     med_keyword_columns = all_data.columns[all_data.columns.str.startswith('Medical_Keyword_')]
     all_data['Med_Keywords_Count'] = all_data[med_keyword_columns].sum(axis=1)
 
+    # poly_15
+    all_data['BMI_Age'] = all_data['BMI'] * all_data['Ins_Age']
+
+    from sklearn.preprocessing import PolynomialFeatures
+    poly = PolynomialFeatures(2, interaction_only=True, include_bias=False).fit_transform(all_data[CONTINUOUS])
+    poly = poly[:, len(CONTINUOUS):]
+    #for i in range(poly.shape[1]):
+    #    all_data['poly_' + str(i + 1)] = poly[:, i]
+    best_poly_120 = ['poly_64', 'poly_55', 'poly_54', 'poly_57', 'poly_56', 'poly_50', 'poly_52', 'poly_68', 'poly_11', 'poly_10', 'poly_13', 'poly_34', 'poly_15', 'poly_14', 'poly_31', 'poly_16', 'poly_73', 'poly_18', 'poly_75', 'poly_77', 'poly_76', 'poly_39', 'poly_74', 'poly_5', 'poly_4', 'poly_7', 'poly_1', 'poly_3', 'poly_2', 'poly_9', 'poly_12', 'poly_37', 'poly_78', 'poly_35', 'poly_42', 'poly_43', 'poly_40', 'poly_41', 'poly_47', 'poly_45', 'poly_33', 'poly_48', 'poly_49', 'poly_32', 'poly_24', 'poly_25', 'poly_26', 'poly_20', 'poly_21', 'poly_22', 'poly_23', 'poly_30', 'poly_28', 'poly_65', 'poly_66', 'poly_67']
+    # T4
+    best_poly = ['poly_5', 'poly_13', 'poly_14', 'poly_15']
+    #for n in best_poly:
+    #    all_data[n] = poly[:, int(n[5:]) - 1]
+    # 3x3
+    #all_data['MH1_BMI'] = all_data['Medical_History_1'] * all_data['BMI']
+    #all_data['MH1_MKC'] = all_data['Medical_History_1'] * all_data['Med_Keywords_Count']
+    #all_data['BMI_MKC'] = all_data['BMI'] * all_data['Med_Keywords_Count']
 
     """
     print('BOOLEANS:')
@@ -1094,13 +1138,18 @@ def work(out_csv_file,
                 fmt=['%d', '%d'],
                 header='"Id","Response"', comments='')
 
-        importance = clf.xgb.booster().get_fscore()
-        import operator
-        print(sorted(importance.items()), "\n")
-        importance = sorted(importance.items(), key=operator.itemgetter(1), reverse=True)
-        print(importance, "\n")
-        features = [k for k, _ in importance]
-        print(len(features), features)
+        if not isinstance(clf.xgb, list):
+            xgb_ensemble = [clf.xgb]
+        else:
+            xgb_ensemble = clf.xgb
+        for xgb in xgb_ensemble:
+            importance = xgb.booster().get_fscore()
+            import operator
+            print(sorted(importance.items()), "\n")
+            importance = sorted(importance.items(), key=operator.itemgetter(1), reverse=True)
+            print(importance, "\n")
+            features = [k for k, _ in importance]
+            print(len(features), features)
 
     return
 
