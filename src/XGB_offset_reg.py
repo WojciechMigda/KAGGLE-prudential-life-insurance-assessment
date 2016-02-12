@@ -609,6 +609,134 @@ jak wyzej, +nowy bucketing (max_depth=10, eta=0.03, eval_metric=Scirpus, learnin
     pass
 
 
+class PrudentialRegressorCVO3(BaseEstimator, RegressorMixin):
+    def __init__(self,
+                objective='reg:linear',
+                learning_rate=0.045,
+                learning_rates=None,
+                min_child_weight=50,
+                subsample=0.8,
+                colsample_bytree=0.7,
+                max_depth=7,
+                n_estimators=700,
+                nthread=-1,
+                seed=0,
+                n_buckets=8,
+                int_fold=6,
+                initial_params=[-1.5, -2.6, -3.6, -1.2, -0.8, 0.04, 0.7, 3.6,
+                                #1., 2., 3., 4., 5., 6., 7.
+                                ],
+                minimizer='BFGS',
+                scoring=NegQWKappaScorer):
+
+        self.objective = objective
+        self.learning_rate = learning_rate
+        self.learning_rates = learning_rates
+        self.min_child_weight = min_child_weight
+        self.subsample = subsample
+        self.colsample_bytree = colsample_bytree
+        self.max_depth = max_depth
+        self.n_estimators = n_estimators
+        self.nthread = nthread
+        self.seed = seed
+        self.n_buckets = n_buckets
+        self.int_fold = int_fold
+        self.initial_params = initial_params
+        self.minimizer = minimizer
+        self.scoring = scoring
+
+        return
+
+        """
+nah
+
+grid scores:
+  mean: 0.65882, std: 0.00382, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10}
+best score: 0.65882
+best params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10}
+        """
+
+    def fit(self, X, y):
+        if not KAGGLE:
+            from OptimizedOffsetRegressor import DigitizedOptimizedOffsetRegressor
+
+        from sklearn.cross_validation import StratifiedKFold
+        kf = StratifiedKFold(y, n_folds=self.int_fold)
+        print(kf)
+        self.xgb = []
+        self.off = []
+        for i, (itrain, itest) in enumerate(kf):
+            ytrain = y[itrain]
+            Xtrain = X.iloc[list(itrain)]
+            ytest = y[itest]
+            Xtest = X.iloc[list(itest)]
+
+            self.xgb += [None]
+
+            from xgb_sklearn import XGBRegressor
+            #from xgboost import XGBRegressor
+            self.xgb[i] = XGBRegressor(
+                           objective=self.objective,
+                           learning_rate=self.learning_rate,
+                           min_child_weight=self.min_child_weight,
+                           subsample=self.subsample,
+                           colsample_bytree=self.colsample_bytree,
+                           max_depth=self.max_depth,
+                           n_estimators=self.n_estimators,
+                           nthread=self.nthread,
+                           missing=0.0,
+                           seed=self.seed)
+            self.xgb[i].fit(Xtrain, ytrain,
+                            eval_set=[(Xtest, ytest)],
+                            #eval_metric=self.scoring,
+                            #eval_metric='rmse',
+                            eval_metric=scirpus_error,
+                            #eval_metric=qwkappa_error,
+                            verbose=False,
+                            early_stopping_rounds=30,
+                            learning_rates=self.learning_rates,
+                            obj=scirpus_regobj
+                            #obj=qwkappa_regobj
+                            )
+            print("best iteration:", self.xgb[i].booster().best_iteration)
+            te_y_hat = self.xgb[i].predict(Xtest,
+                                        ntree_limit=self.xgb[i].booster().best_iteration)
+            print('XGB Test score is:', -self.scoring(te_y_hat, ytest))
+
+            pass
+
+        xgb_result = []
+        for xgb in self.xgb:
+            tr_y_hat = xgb.predict(Xtrain, ntree_limit=xgb.booster().best_iteration)
+            xgb_result.append(tr_y_hat)
+
+        from numpy import array
+        xgb_result = array(xgb_result).mean(axis=0)
+
+        self.off = DigitizedOptimizedOffsetRegressor(n_buckets=self.n_buckets,
+                       initial_params=self.initial_params,
+                       minimizer=self.minimizer,
+                       scoring=self.scoring)
+        self.off.fit(xgb_result, ytrain)
+        print("Offsets:", self.off.params)
+
+        return self
+
+
+    def predict(self, X):
+        from numpy import clip, array
+        xgb_result = []
+        for xgb in self.xgb:
+            te_y_hat = xgb.predict(X, ntree_limit=xgb.booster().best_iteration)
+            xgb_result.append(te_y_hat)
+        xgb_result = array(xgb_result).mean(axis=0)
+
+        result = clip(self.off.predict(xgb_result), 1, 8)
+        return result
+
+    pass
+
+
 class PrudentialRegressorCVO2FO(BaseEstimator, RegressorMixin):
     def __init__(self,
                 objective='reg:linear',
