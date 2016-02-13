@@ -93,10 +93,10 @@ NOMINALS_3 = ['Product_Info_7', 'InsuredInfo_1', 'Insurance_History_2',
              'Medical_History_40', 'Medical_History_41']
 
 NOMINALS_GE4 = [
+    'InsuredInfo_3', # 11
     'Product_Info_2', # 19
     'Product_Info_3', # 38
     'Employment_Info_2', # 38
-    'InsuredInfo_3', # 11
     'Medical_History_2' # 628
     ]
 
@@ -987,14 +987,46 @@ def work(out_csv_file,
 
 
     # create any new variables
-    all_data['Product_Info_2_char'] = all_data.Product_Info_2.str[0]
-    all_data['Product_Info_2_num'] = all_data.Product_Info_2.str[1]
+#    all_data['Product_Info_2_char'] = all_data.Product_Info_2.str[0]
+#    all_data['Product_Info_2_num'] = all_data.Product_Info_2.str[1]
 
 
     # factorize categorical variables
-    all_data['Product_Info_2'] = factorize(all_data['Product_Info_2'])[0]# + 1
-    all_data['Product_Info_2_char'] = factorize(all_data['Product_Info_2_char'])[0]# + 1
-    all_data['Product_Info_2_num'] = factorize(all_data['Product_Info_2_num'])[0]# + 1
+#    all_data['Product_Info_2'] = factorize(all_data['Product_Info_2'])[0]# + 1
+#    all_data['Product_Info_2_char'] = factorize(all_data['Product_Info_2_char'])[0]# + 1
+#    all_data['Product_Info_2_num'] = factorize(all_data['Product_Info_2_num'])[0]# + 1
+
+    #all_data = all_data.drop(NOMINALS_3, axis=1)
+    all_data = OneHot(all_data, NOMINALS_3)
+    all_data = OneHot(all_data, NOMINALS_GE4)
+    #all_data = OneHot(all_data, NOMINALS_GE4[:-1])
+    #all_data = all_data.drop(NOMINALS_GE4[-1:], axis=1)
+    """
+all_data = all_data.drop(NOMINALS_GE4, axis=1)
+all_data = OneHot(all_data, NOMINALS_3)
+  mean: 0.65158, std: 0.00558, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10}
+
+    all_data = OneHot(all_data, NOMINALS_3)
+    all_data = OneHot(all_data, NOMINALS_GE4[:2])
+    all_data = all_data.drop(NOMINALS_GE4[2:], axis=1)
+  mean: 0.65712, std: 0.00514, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10}
+
+    all_data = OneHot(all_data, NOMINALS_3)
+    all_data = OneHot(all_data, NOMINALS_GE4[:-1])
+    all_data = all_data.drop(NOMINALS_GE4[-1:], axis=1)
+  mean: 0.65903, std: 0.00418, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10}
+
+    all_data = OneHot(all_data, NOMINALS_3)
+    all_data = OneHot(all_data, NOMINALS_GE4)
+  mean: 0.66028, std: 0.00443, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10}
+
+inf_fold=5, 28 minutes
+  mean: 0.66003, std: 0.00465, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 5, 'max_depth': 10}
+inf_fold=5, bez learning_rates, 22 minutes
+  mean: 0.66010, std: 0.00416, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 5, 'max_depth': 10}
+inf_fold=4, eta=0.05, bez learning_rates, 11 minutes
+  mean: 0.65861, std: 0.00391, params: {'colsample_bytree': 0.67, 'learning_rate': 0.05, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 4, 'max_depth': 10}
+    """
 
     """
     Both: 0.65576
@@ -1114,7 +1146,7 @@ def work(out_csv_file,
                             param_grid=param_grid,
                             cv=StratifiedKFold(train_y, n_folds=nfolds),
                             scoring=qwkappa, n_jobs=1,
-                            verbose=1,
+                            verbose=2,
                             refit=False)
         grid.fit(train_X, train_y)
         print('grid scores:')
