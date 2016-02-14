@@ -111,6 +111,245 @@ DISCRETE = ['Medical_History_1', 'Medical_History_10', 'Medical_History_15',
 BOOLEANS = ['Medical_Keyword_' + str(i + 1) for i in range(48)]
 
 
+TO_DROP = ['Medical_Keyword_13', 'Product_Info_7_2', 'InsuredInfo_1_3',
+ 'Insurance_History_2_2', 'Insurance_History_3_2', 'Medical_History_3_1',
+ 'Medical_History_5_3', 'Medical_History_6_2', 'Medical_History_8_1',
+ 'Medical_History_9_3', 'Medical_History_11_1', 'Medical_History_12_1',
+ 'Medical_History_13_2', 'Medical_History_16_2', 'Medical_History_17_1',
+ 'Medical_History_18_3', 'Medical_History_19_3', 'Medical_History_20_3',
+ 'Medical_History_21_3', 'Medical_History_23_2', 'Medical_History_25_3',
+ 'Medical_History_26_1', 'Medical_History_27_2', 'Medical_History_28_3',
+ 'Medical_History_29_2', 'Medical_History_30_1', 'Medical_History_31_2',
+ 'Medical_History_33_2', 'Medical_History_34_2', 'Medical_History_35_1',
+ 'Medical_History_35_2', 'Medical_History_35_3', 'Medical_History_37_3',
+ 'Medical_History_38_3', 'Medical_History_39_2', 'Medical_History_40_2',
+ 'Medical_History_41_2', 'InsuredInfo_3_9', 'Product_Info_2_7',
+ 'Product_Info_2_9', 'Product_Info_2_13', 'Product_Info_2_14',
+ 'Product_Info_3_1', 'Product_Info_3_2', 'Product_Info_3_3',
+ 'Product_Info_3_4', 'Product_Info_3_5', 'Product_Info_3_6',
+ 'Product_Info_3_7', 'Product_Info_3_8', 'Product_Info_3_9',
+ 'Product_Info_3_11', 'Product_Info_3_12', 'Product_Info_3_13',
+ 'Product_Info_3_14', 'Product_Info_3_15', 'Product_Info_3_16',
+ 'Product_Info_3_17', 'Product_Info_3_18', 'Product_Info_3_19',
+ 'Product_Info_3_20', 'Product_Info_3_21', 'Product_Info_3_22',
+ 'Product_Info_3_23', 'Product_Info_3_24', 'Product_Info_3_25',
+ 'Product_Info_3_27', 'Product_Info_3_28', 'Product_Info_3_30',
+ 'Product_Info_3_32', 'Product_Info_3_33', 'Product_Info_3_34',
+ 'Product_Info_3_35', 'Product_Info_3_36', 'Product_Info_3_37',
+ 'Product_Info_3_38', 'Employment_Info_2_2', 'Employment_Info_2_4',
+ 'Employment_Info_2_5', 'Employment_Info_2_6', 'Employment_Info_2_7',
+ 'Employment_Info_2_8', 'Employment_Info_2_10', 'Employment_Info_2_13',
+ 'Employment_Info_2_15', 'Employment_Info_2_16', 'Employment_Info_2_17',
+ 'Employment_Info_2_18', 'Employment_Info_2_19', 'Employment_Info_2_20',
+ 'Employment_Info_2_21', 'Employment_Info_2_22', 'Employment_Info_2_23',
+ 'Employment_Info_2_24', 'Employment_Info_2_25', 'Employment_Info_2_26',
+ 'Employment_Info_2_27', 'Employment_Info_2_28', 'Employment_Info_2_29',
+ 'Employment_Info_2_30', 'Employment_Info_2_31', 'Employment_Info_2_33',
+ 'Employment_Info_2_34', 'Employment_Info_2_35', 'Employment_Info_2_36',
+ 'Employment_Info_2_37', 'Employment_Info_2_38', 'Medical_History_2_1',
+ 'Medical_History_2_2', 'Medical_History_2_4', 'Medical_History_2_5',
+ 'Medical_History_2_6', 'Medical_History_2_7', 'Medical_History_2_8',
+ 'Medical_History_2_9', 'Medical_History_2_10', 'Medical_History_2_11',
+ 'Medical_History_2_12', 'Medical_History_2_13', 'Medical_History_2_15',
+ 'Medical_History_2_17', 'Medical_History_2_18', 'Medical_History_2_19',
+ 'Medical_History_2_20', 'Medical_History_2_21', 'Medical_History_2_22',
+ 'Medical_History_2_23', 'Medical_History_2_24', 'Medical_History_2_25',
+ 'Medical_History_2_26', 'Medical_History_2_27', 'Medical_History_2_28',
+ 'Medical_History_2_29', 'Medical_History_2_30', 'Medical_History_2_31',
+ 'Medical_History_2_32', 'Medical_History_2_33', 'Medical_History_2_34',
+ 'Medical_History_2_35', 'Medical_History_2_36', 'Medical_History_2_37',
+ 'Medical_History_2_38', 'Medical_History_2_39', 'Medical_History_2_40',
+ 'Medical_History_2_41', 'Medical_History_2_42', 'Medical_History_2_43',
+ 'Medical_History_2_44', 'Medical_History_2_45', 'Medical_History_2_46',
+ 'Medical_History_2_47', 'Medical_History_2_48', 'Medical_History_2_49',
+ 'Medical_History_2_50', 'Medical_History_2_51', 'Medical_History_2_52',
+ 'Medical_History_2_53', 'Medical_History_2_54', 'Medical_History_2_55',
+ 'Medical_History_2_56', 'Medical_History_2_58', 'Medical_History_2_59',
+ 'Medical_History_2_60', 'Medical_History_2_61', 'Medical_History_2_62',
+ 'Medical_History_2_63', 'Medical_History_2_64', 'Medical_History_2_65',
+ 'Medical_History_2_66', 'Medical_History_2_67', 'Medical_History_2_68',
+ 'Medical_History_2_69', 'Medical_History_2_70', 'Medical_History_2_71',
+ 'Medical_History_2_72', 'Medical_History_2_73', 'Medical_History_2_74',
+ 'Medical_History_2_75', 'Medical_History_2_76', 'Medical_History_2_77',
+ 'Medical_History_2_78', 'Medical_History_2_79', 'Medical_History_2_80',
+ 'Medical_History_2_81', 'Medical_History_2_82', 'Medical_History_2_83',
+ 'Medical_History_2_84', 'Medical_History_2_85', 'Medical_History_2_86',
+ 'Medical_History_2_87', 'Medical_History_2_88', 'Medical_History_2_89',
+ 'Medical_History_2_90', 'Medical_History_2_91', 'Medical_History_2_92',
+ 'Medical_History_2_93', 'Medical_History_2_94', 'Medical_History_2_95',
+ 'Medical_History_2_96', 'Medical_History_2_97', 'Medical_History_2_98',
+ 'Medical_History_2_99', 'Medical_History_2_100', 'Medical_History_2_101',
+ 'Medical_History_2_102', 'Medical_History_2_103', 'Medical_History_2_104',
+ 'Medical_History_2_105', 'Medical_History_2_106', 'Medical_History_2_107',
+ 'Medical_History_2_108', 'Medical_History_2_109', 'Medical_History_2_110',
+ 'Medical_History_2_112', 'Medical_History_2_113', 'Medical_History_2_114',
+ 'Medical_History_2_115', 'Medical_History_2_116', 'Medical_History_2_117',
+ 'Medical_History_2_118', 'Medical_History_2_119', 'Medical_History_2_120',
+ 'Medical_History_2_121', 'Medical_History_2_122', 'Medical_History_2_123',
+ 'Medical_History_2_124', 'Medical_History_2_125', 'Medical_History_2_126',
+ 'Medical_History_2_127', 'Medical_History_2_128', 'Medical_History_2_130',
+ 'Medical_History_2_131', 'Medical_History_2_132', 'Medical_History_2_133',
+ 'Medical_History_2_134', 'Medical_History_2_135', 'Medical_History_2_136',
+ 'Medical_History_2_137', 'Medical_History_2_138', 'Medical_History_2_139',
+ 'Medical_History_2_140', 'Medical_History_2_141', 'Medical_History_2_143',
+ 'Medical_History_2_144', 'Medical_History_2_145', 'Medical_History_2_146',
+ 'Medical_History_2_147', 'Medical_History_2_148', 'Medical_History_2_149',
+ 'Medical_History_2_150', 'Medical_History_2_151', 'Medical_History_2_154',
+ 'Medical_History_2_155', 'Medical_History_2_156', 'Medical_History_2_157',
+ 'Medical_History_2_160', 'Medical_History_2_161', 'Medical_History_2_162',
+ 'Medical_History_2_163', 'Medical_History_2_164', 'Medical_History_2_165',
+ 'Medical_History_2_166', 'Medical_History_2_167', 'Medical_History_2_168',
+ 'Medical_History_2_169', 'Medical_History_2_170', 'Medical_History_2_171',
+ 'Medical_History_2_172', 'Medical_History_2_173', 'Medical_History_2_174',
+ 'Medical_History_2_175', 'Medical_History_2_176', 'Medical_History_2_178',
+ 'Medical_History_2_179', 'Medical_History_2_180', 'Medical_History_2_181',
+ 'Medical_History_2_182', 'Medical_History_2_183', 'Medical_History_2_184',
+ 'Medical_History_2_185', 'Medical_History_2_186', 'Medical_History_2_187',
+ 'Medical_History_2_189', 'Medical_History_2_190', 'Medical_History_2_191',
+ 'Medical_History_2_192', 'Medical_History_2_193', 'Medical_History_2_194',
+ 'Medical_History_2_195', 'Medical_History_2_196', 'Medical_History_2_197',
+ 'Medical_History_2_198', 'Medical_History_2_199', 'Medical_History_2_200',
+ 'Medical_History_2_201', 'Medical_History_2_202', 'Medical_History_2_203',
+ 'Medical_History_2_204', 'Medical_History_2_205', 'Medical_History_2_206',
+ 'Medical_History_2_207', 'Medical_History_2_208', 'Medical_History_2_209',
+ 'Medical_History_2_210', 'Medical_History_2_211', 'Medical_History_2_212',
+ 'Medical_History_2_213', 'Medical_History_2_214', 'Medical_History_2_215',
+ 'Medical_History_2_216', 'Medical_History_2_217', 'Medical_History_2_218',
+ 'Medical_History_2_219', 'Medical_History_2_220', 'Medical_History_2_221',
+ 'Medical_History_2_222', 'Medical_History_2_223', 'Medical_History_2_224',
+ 'Medical_History_2_225', 'Medical_History_2_226', 'Medical_History_2_227',
+ 'Medical_History_2_228', 'Medical_History_2_229', 'Medical_History_2_230',
+ 'Medical_History_2_231', 'Medical_History_2_232', 'Medical_History_2_233',
+ 'Medical_History_2_234', 'Medical_History_2_235', 'Medical_History_2_236',
+ 'Medical_History_2_237', 'Medical_History_2_238', 'Medical_History_2_239',
+ 'Medical_History_2_240', 'Medical_History_2_241', 'Medical_History_2_242',
+ 'Medical_History_2_243', 'Medical_History_2_244', 'Medical_History_2_245',
+ 'Medical_History_2_246', 'Medical_History_2_247', 'Medical_History_2_248',
+ 'Medical_History_2_249', 'Medical_History_2_250', 'Medical_History_2_251',
+ 'Medical_History_2_252', 'Medical_History_2_253', 'Medical_History_2_254',
+ 'Medical_History_2_256', 'Medical_History_2_257', 'Medical_History_2_258',
+ 'Medical_History_2_259', 'Medical_History_2_260', 'Medical_History_2_261',
+ 'Medical_History_2_262', 'Medical_History_2_263', 'Medical_History_2_264',
+ 'Medical_History_2_265', 'Medical_History_2_266', 'Medical_History_2_267',
+ 'Medical_History_2_268', 'Medical_History_2_269', 'Medical_History_2_270',
+ 'Medical_History_2_271', 'Medical_History_2_272', 'Medical_History_2_273',
+ 'Medical_History_2_274', 'Medical_History_2_275', 'Medical_History_2_276',
+ 'Medical_History_2_277', 'Medical_History_2_278', 'Medical_History_2_279',
+ 'Medical_History_2_280', 'Medical_History_2_281', 'Medical_History_2_282',
+ 'Medical_History_2_283', 'Medical_History_2_284', 'Medical_History_2_285',
+ 'Medical_History_2_286', 'Medical_History_2_287', 'Medical_History_2_288',
+ 'Medical_History_2_289', 'Medical_History_2_290', 'Medical_History_2_291',
+ 'Medical_History_2_292', 'Medical_History_2_293', 'Medical_History_2_294',
+ 'Medical_History_2_295', 'Medical_History_2_296', 'Medical_History_2_297',
+ 'Medical_History_2_298', 'Medical_History_2_299', 'Medical_History_2_300',
+ 'Medical_History_2_301', 'Medical_History_2_302', 'Medical_History_2_303',
+ 'Medical_History_2_304', 'Medical_History_2_305', 'Medical_History_2_306',
+ 'Medical_History_2_307', 'Medical_History_2_308', 'Medical_History_2_309',
+ 'Medical_History_2_310', 'Medical_History_2_311', 'Medical_History_2_312',
+ 'Medical_History_2_313', 'Medical_History_2_314', 'Medical_History_2_315',
+ 'Medical_History_2_316', 'Medical_History_2_317', 'Medical_History_2_318',
+ 'Medical_History_2_319', 'Medical_History_2_320', 'Medical_History_2_321',
+ 'Medical_History_2_322', 'Medical_History_2_324', 'Medical_History_2_325',
+ 'Medical_History_2_326', 'Medical_History_2_327', 'Medical_History_2_328',
+ 'Medical_History_2_329', 'Medical_History_2_330', 'Medical_History_2_331',
+ 'Medical_History_2_332', 'Medical_History_2_333', 'Medical_History_2_334',
+ 'Medical_History_2_335', 'Medical_History_2_336', 'Medical_History_2_337',
+ 'Medical_History_2_338', 'Medical_History_2_339', 'Medical_History_2_340',
+ 'Medical_History_2_341', 'Medical_History_2_342', 'Medical_History_2_343',
+ 'Medical_History_2_344', 'Medical_History_2_345', 'Medical_History_2_346',
+ 'Medical_History_2_347', 'Medical_History_2_348', 'Medical_History_2_349',
+ 'Medical_History_2_350', 'Medical_History_2_351', 'Medical_History_2_353',
+ 'Medical_History_2_354', 'Medical_History_2_355', 'Medical_History_2_356',
+ 'Medical_History_2_357', 'Medical_History_2_358', 'Medical_History_2_360',
+ 'Medical_History_2_361', 'Medical_History_2_362', 'Medical_History_2_363',
+ 'Medical_History_2_364', 'Medical_History_2_365', 'Medical_History_2_366',
+ 'Medical_History_2_367', 'Medical_History_2_368', 'Medical_History_2_369',
+ 'Medical_History_2_370', 'Medical_History_2_371', 'Medical_History_2_372',
+ 'Medical_History_2_374', 'Medical_History_2_375', 'Medical_History_2_376',
+ 'Medical_History_2_377', 'Medical_History_2_378', 'Medical_History_2_379',
+ 'Medical_History_2_380', 'Medical_History_2_381', 'Medical_History_2_382',
+ 'Medical_History_2_383', 'Medical_History_2_384', 'Medical_History_2_385',
+ 'Medical_History_2_386', 'Medical_History_2_387', 'Medical_History_2_388',
+ 'Medical_History_2_389', 'Medical_History_2_390', 'Medical_History_2_391',
+ 'Medical_History_2_392', 'Medical_History_2_394', 'Medical_History_2_395',
+ 'Medical_History_2_396', 'Medical_History_2_397', 'Medical_History_2_398',
+ 'Medical_History_2_399', 'Medical_History_2_400', 'Medical_History_2_401',
+ 'Medical_History_2_402', 'Medical_History_2_403', 'Medical_History_2_404',
+ 'Medical_History_2_405', 'Medical_History_2_406', 'Medical_History_2_407',
+ 'Medical_History_2_408', 'Medical_History_2_409', 'Medical_History_2_410',
+ 'Medical_History_2_411', 'Medical_History_2_412', 'Medical_History_2_413',
+ 'Medical_History_2_414', 'Medical_History_2_415', 'Medical_History_2_416',
+ 'Medical_History_2_417', 'Medical_History_2_418', 'Medical_History_2_419',
+ 'Medical_History_2_421', 'Medical_History_2_422', 'Medical_History_2_423',
+ 'Medical_History_2_424', 'Medical_History_2_425', 'Medical_History_2_426',
+ 'Medical_History_2_427', 'Medical_History_2_428', 'Medical_History_2_429',
+ 'Medical_History_2_430', 'Medical_History_2_431', 'Medical_History_2_432',
+ 'Medical_History_2_433', 'Medical_History_2_434', 'Medical_History_2_435',
+ 'Medical_History_2_436', 'Medical_History_2_437', 'Medical_History_2_438',
+ 'Medical_History_2_440', 'Medical_History_2_441', 'Medical_History_2_442',
+ 'Medical_History_2_443', 'Medical_History_2_444', 'Medical_History_2_445',
+ 'Medical_History_2_446', 'Medical_History_2_447', 'Medical_History_2_448',
+ 'Medical_History_2_449', 'Medical_History_2_450', 'Medical_History_2_451',
+ 'Medical_History_2_452', 'Medical_History_2_453', 'Medical_History_2_454',
+ 'Medical_History_2_455', 'Medical_History_2_456', 'Medical_History_2_457',
+ 'Medical_History_2_458', 'Medical_History_2_459', 'Medical_History_2_460',
+ 'Medical_History_2_461', 'Medical_History_2_462', 'Medical_History_2_464',
+ 'Medical_History_2_465', 'Medical_History_2_466', 'Medical_History_2_467',
+ 'Medical_History_2_468', 'Medical_History_2_469', 'Medical_History_2_470',
+ 'Medical_History_2_471', 'Medical_History_2_472', 'Medical_History_2_473',
+ 'Medical_History_2_474', 'Medical_History_2_475', 'Medical_History_2_477',
+ 'Medical_History_2_478', 'Medical_History_2_479', 'Medical_History_2_480',
+ 'Medical_History_2_481', 'Medical_History_2_482', 'Medical_History_2_483',
+ 'Medical_History_2_484', 'Medical_History_2_485', 'Medical_History_2_486',
+ 'Medical_History_2_487', 'Medical_History_2_488', 'Medical_History_2_489',
+ 'Medical_History_2_490', 'Medical_History_2_491', 'Medical_History_2_492',
+ 'Medical_History_2_493', 'Medical_History_2_494', 'Medical_History_2_495',
+ 'Medical_History_2_496', 'Medical_History_2_497', 'Medical_History_2_498',
+ 'Medical_History_2_499', 'Medical_History_2_500', 'Medical_History_2_501',
+ 'Medical_History_2_502', 'Medical_History_2_503', 'Medical_History_2_504',
+ 'Medical_History_2_505', 'Medical_History_2_506', 'Medical_History_2_507',
+ 'Medical_History_2_508', 'Medical_History_2_509', 'Medical_History_2_510',
+ 'Medical_History_2_511', 'Medical_History_2_512', 'Medical_History_2_513',
+ 'Medical_History_2_514', 'Medical_History_2_515', 'Medical_History_2_516',
+ 'Medical_History_2_517', 'Medical_History_2_518', 'Medical_History_2_519',
+ 'Medical_History_2_520', 'Medical_History_2_521', 'Medical_History_2_522',
+ 'Medical_History_2_523', 'Medical_History_2_524', 'Medical_History_2_525',
+ 'Medical_History_2_526', 'Medical_History_2_527', 'Medical_History_2_528',
+ 'Medical_History_2_529', 'Medical_History_2_530', 'Medical_History_2_531',
+ 'Medical_History_2_532', 'Medical_History_2_533', 'Medical_History_2_534',
+ 'Medical_History_2_535', 'Medical_History_2_536', 'Medical_History_2_537',
+ 'Medical_History_2_538', 'Medical_History_2_539', 'Medical_History_2_540',
+ 'Medical_History_2_541', 'Medical_History_2_542', 'Medical_History_2_543',
+ 'Medical_History_2_544', 'Medical_History_2_545', 'Medical_History_2_548',
+ 'Medical_History_2_549', 'Medical_History_2_550', 'Medical_History_2_551',
+ 'Medical_History_2_552', 'Medical_History_2_553', 'Medical_History_2_554',
+ 'Medical_History_2_555', 'Medical_History_2_556', 'Medical_History_2_557',
+ 'Medical_History_2_558', 'Medical_History_2_559', 'Medical_History_2_560',
+ 'Medical_History_2_561', 'Medical_History_2_562', 'Medical_History_2_563',
+ 'Medical_History_2_564', 'Medical_History_2_565', 'Medical_History_2_566',
+ 'Medical_History_2_567', 'Medical_History_2_568', 'Medical_History_2_569',
+ 'Medical_History_2_570', 'Medical_History_2_571', 'Medical_History_2_572',
+ 'Medical_History_2_573', 'Medical_History_2_574', 'Medical_History_2_575',
+ 'Medical_History_2_576', 'Medical_History_2_577', 'Medical_History_2_578',
+ 'Medical_History_2_579', 'Medical_History_2_580', 'Medical_History_2_582',
+ 'Medical_History_2_583', 'Medical_History_2_584', 'Medical_History_2_585',
+ 'Medical_History_2_586', 'Medical_History_2_587', 'Medical_History_2_588',
+ 'Medical_History_2_589', 'Medical_History_2_590', 'Medical_History_2_591',
+ 'Medical_History_2_592', 'Medical_History_2_593', 'Medical_History_2_594',
+ 'Medical_History_2_595', 'Medical_History_2_596', 'Medical_History_2_597',
+ 'Medical_History_2_598', 'Medical_History_2_599', 'Medical_History_2_600',
+ 'Medical_History_2_601', 'Medical_History_2_602', 'Medical_History_2_603',
+ 'Medical_History_2_604', 'Medical_History_2_605', 'Medical_History_2_606',
+ 'Medical_History_2_607', 'Medical_History_2_609', 'Medical_History_2_610',
+ 'Medical_History_2_611', 'Medical_History_2_612', 'Medical_History_2_613',
+ 'Medical_History_2_614', 'Medical_History_2_615', 'Medical_History_2_616',
+ 'Medical_History_2_617', 'Medical_History_2_618', 'Medical_History_2_619',
+ 'Medical_History_2_620', 'Medical_History_2_621', 'Medical_History_2_622',
+ 'Medical_History_2_623', 'Medical_History_2_624', 'Medical_History_2_625',
+ 'Medical_History_2_626', 'Medical_History_2_627', 'Medical_History_2_628']
+
+
+
 def CSV_w_coro():
     with open('xgbgen.csv', 'w') as f:
         while True:
@@ -455,6 +694,7 @@ class PrudentialRegressorCVO2(BaseEstimator, RegressorMixin):
                 subsample=0.8,
                 colsample_bytree=0.7,
                 max_depth=7,
+                gamma=0.0,
                 n_estimators=700,
                 nthread=-1,
                 seed=0,
@@ -473,6 +713,7 @@ class PrudentialRegressorCVO2(BaseEstimator, RegressorMixin):
         self.subsample = subsample
         self.colsample_bytree = colsample_bytree
         self.max_depth = max_depth
+        self.gamma = gamma
         self.n_estimators = n_estimators
         self.nthread = nthread
         self.seed = seed
@@ -481,7 +722,25 @@ class PrudentialRegressorCVO2(BaseEstimator, RegressorMixin):
         self.initial_params = initial_params
         self.minimizer = minimizer
         self.scoring = scoring
+        self.feature_importances_ = None
 
+        return
+
+
+    def _update_feature_iportances(self, feature_names):
+        from numpy import zeros
+        feature_importances = zeros(len(feature_names))
+
+        for xgb in self.xgb:
+            importances = xgb.booster().get_fscore()
+            for i, feat in enumerate(feature_names):
+                if feat in importances:
+                    feature_importances[i] += importances[feat]
+                    pass
+                pass
+            pass
+
+        self.feature_importances_ = feature_importances / sum(feature_importances)
         return
 
 
@@ -593,6 +852,7 @@ jak wyzej, +nowy bucketing (max_depth=10, eta=0.03, eval_metric=Scirpus, learnin
                            subsample=self.subsample,
                            colsample_bytree=self.colsample_bytree,
                            max_depth=self.max_depth,
+                           gamma=self.gamma,
                            n_estimators=self.n_estimators,
                            nthread=self.nthread,
                            missing=0.0,
@@ -621,7 +881,10 @@ jak wyzej, +nowy bucketing (max_depth=10, eta=0.03, eval_metric=Scirpus, learnin
                            scoring=self.scoring)
             self.off[i].fit(te_y_hat, ytest)
             print("Offsets:", self.off[i].params)
+
             pass
+
+        self._update_feature_iportances(X.columns.values.tolist())
 
         return self
 
@@ -978,6 +1241,20 @@ def work(out_csv_file,
     all_data[CONTINUOUS] = imp.fit_transform(all_data[CONTINUOUS])
 #    all_data[BOOLEANS] = all_data[BOOLEANS] + 1e6
 
+#    for col in all_data[CONTINUOUS]:
+#        from numpy import median, mean as npmean
+#        _min = min(all_data[col])
+#        _max = max(all_data[col])
+#        _median = median(all_data[col])
+#        _mean = npmean(all_data[col])
+#        if _median != _min and _median != _max:
+#            all_data[col + '_median'] = all_data[col] > _median
+#            pass
+#        if _mean != _min and _mean != _max:
+#            all_data[col + '_mean'] = all_data[col] > _mean
+#            pass
+#        pass
+
 #    from sklearn.preprocessing import StandardScaler
 #    from sklearn.decomposition import PCA
 #    std = StandardScaler(copy=True)
@@ -1026,6 +1303,105 @@ inf_fold=5, bez learning_rates, 22 minutes
   mean: 0.66010, std: 0.00416, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 5, 'max_depth': 10}
 inf_fold=4, eta=0.05, bez learning_rates, 11 minutes
   mean: 0.65861, std: 0.00391, params: {'colsample_bytree': 0.67, 'learning_rate': 0.05, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 4, 'max_depth': 10}
+
+    grid scores:
+  mean: 0.65888, std: 0.00443, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.8, 'int_fold': 4, 'max_depth': 10}
+  mean: 0.65914, std: 0.00422, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 4, 'max_depth': 10}
+  mean: 0.65978, std: 0.00360, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 10}
+  mean: 0.65875, std: 0.00458, params: {'colsample_bytree': 0.7, 'learning_rate': 0.05, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.8, 'int_fold': 4, 'max_depth': 10}
+  mean: 0.65913, std: 0.00416, params: {'colsample_bytree': 0.7, 'learning_rate': 0.05, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 4, 'max_depth': 10}
+  mean: 0.65860, std: 0.00387, params: {'colsample_bytree': 0.7, 'learning_rate': 0.05, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 10}
+  mean: 0.65941, std: 0.00377, params: {'colsample_bytree': 0.8, 'learning_rate': 0.05, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.8, 'int_fold': 4, 'max_depth': 10}
+  mean: 0.65938, std: 0.00420, params: {'colsample_bytree': 0.8, 'learning_rate': 0.05, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 4, 'max_depth': 10}
+  mean: 0.65874, std: 0.00378, params: {'colsample_bytree': 0.8, 'learning_rate': 0.05, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 10}
+best score: 0.65978
+best params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 10}
+  mean: 0.65933, std: 0.00412, params: {'colsample_bytree': 0.55, 'learning_rate': 0.05, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 10}
+  mean: 0.65961, std: 0.00411, params: {'colsample_bytree': 0.45, 'learning_rate': 0.05, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 10}
+  mean: 0.65953, std: 0.00370, params: {'colsample_bytree': 0.35, 'learning_rate': 0.05, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 10}
+
+onehot + poly@CONT, po obcięciu nieważnych
+grid scores:
+  mean: 0.65729, std: 0.00337, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 10}
+best score: 0.65729
+
+onehot + poly@CONT, po obcięciu nieważnych
+  mean: 0.65660, std: 0.00293, params: {'colsample_bytree': 0.67, 'learning_rate': 0.05, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 4, 'max_depth': 10, 'gamma': 0.0}
+grid scores:
+  mean: 0.65712, std: 0.00384, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 200, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 8, 'gamma': 0.0}
+  mean: 0.65695, std: 0.00361, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 8, 'gamma': 0.0}
+  mean: 0.65705, std: 0.00351, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 200, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 10, 'gamma': 0.0}
+  mean: 0.65729, std: 0.00337, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 10, 'gamma': 0.0}
+  mean: 0.65690, std: 0.00402, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 200, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 8, 'gamma': 1.0}
+  mean: 0.65678, std: 0.00347, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 8, 'gamma': 1.0}
+  mean: 0.65748, std: 0.00388, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 200, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 10, 'gamma': 1.0}
+  mean: 0.65727, std: 0.00351, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 10, 'gamma': 1.0}
+best score: 0.65748
+best params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 200, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 10, 'gamma': 1.0}
+
+  mean: 0.65645, std: 0.00403, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 160, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 6, 'gamma': 1.0}
+  mean: 0.65699, std: 0.00394, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 200, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 6, 'gamma': 1.0}
+  mean: 0.65746, std: 0.00367, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 160, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 8, 'gamma': 1.0}
+  mean: 0.65690, std: 0.00402, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 200, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 8, 'gamma': 1.0}
+best score: 0.65746
+best params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 160, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 8, 'gamma': 1.0}
+
+efekt +/- mean, +/- median, vs. 0.65748
+  mean: 0.65728, std: 0.00347, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 200, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 10, 'gamma': 1.0}
+
+bez poly (psuje)
+  mean: 0.65946, std: 0.00392, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 200, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 10, 'gamma': 1.0}
+
+grid scores:
+> mean: 0.66006, std: 0.00437, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 160, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 8, 'gamma': 0.0}
+  mean: 0.65847, std: 0.00445, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 8, 'gamma': 0.0}
+  mean: 0.65917, std: 0.00514, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 160, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 12, 'gamma': 0.0}
+  mean: 0.65956, std: 0.00452, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 12, 'gamma': 0.0}
+  mean: 0.65950, std: 0.00425, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 160, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 8, 'gamma': 1.0}
+  mean: 0.65888, std: 0.00380, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 8, 'gamma': 1.0}
+  mean: 0.65953, std: 0.00419, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 160, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 12, 'gamma': 1.0}
+  mean: 0.65934, std: 0.00400, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 12, 'gamma': 1.0}
+best score: 0.66006
+best params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 160, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 8, 'gamma': 0.0}
+
+grid scores:
+  mean: 0.65942, std: 0.00459, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 80, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 6, 'gamma': 0.0}
+  mean: 0.65927, std: 0.00386, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 120, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 6, 'gamma': 0.0}
+  mean: 0.65969, std: 0.00381, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 80, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 8, 'gamma': 0.0}
+  mean: 0.65998, std: 0.00414, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 120, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 8, 'gamma': 0.0}
+  mean: 0.65946, std: 0.00363, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 80, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 10, 'gamma': 0.0}
+  mean: 0.65967, std: 0.00400, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 120, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 10, 'gamma': 0.0}
+best score: 0.65998
+best params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 120, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 8, 'gamma': 0.0}
+  mean: 0.65945, std: 0.00351, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 140, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 8, 'gamma': 0.0}
+  mean: 0.65982, std: 0.00414, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 150, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 8, 'gamma': 0.0}
+  mean: 0.65935, std: 0.00393, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 170, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 8, 'gamma': 0.0}
+  mean: 0.65903, std: 0.00280, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 180, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 8, 'gamma': 0.0}
+best score: 0.65982
+best params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 150, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 8, 'gamma': 0.0}
+
+  mean: 0.65947, std: 0.00332, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 160, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 7, 'gamma': 0.0}
+  mean: 0.65956, std: 0.00395, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 160, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 9, 'gamma': 0.0}
+best score: 0.65956
+best params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 160, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 9, 'gamma': 0.0}
+  mean: 0.65951, std: 0.00416, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 160, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 8, 'gamma': 2.0}
+  mean: 0.65975, std: 0.00367, params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 160, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 8, 'gamma': 4.0}
+best score: 0.65975
+best params: {'colsample_bytree': 0.6, 'learning_rate': 0.05, 'min_child_weight': 160, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 4, 'max_depth': 8, 'gamma': 4.0}
+
+=====
+full one hot bez poly
+full CV, cf. 0.66028
+grid scores:
+  mean: 0.65966, std: 0.00394, params: {'colsample_bytree': 0.6, 'learning_rate': 0.03, 'min_child_weight': 160, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 7, 'max_depth': 8, 'gamma': 0.0}
+best score: 0.65966
+best params: {'colsample_bytree': 0.6, 'learning_rate': 0.03, 'min_child_weight': 160, 'n_estimators': 700, 'subsample': 1.0, 'int_fold': 7, 'max_depth': 8, 'gamma': 0.0}
+grid scores:
+  mean: 0.66047, std: 0.00471, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
+best score: 0.66047
+best params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
+
+
     """
 
     """
@@ -1043,8 +1419,8 @@ inf_fold=4, eta=0.05, bez learning_rates, 11 minutes
     from sklearn.preprocessing import PolynomialFeatures
     poly = PolynomialFeatures(2, interaction_only=True, include_bias=False).fit_transform(all_data[CONTINUOUS])
     poly = poly[:, len(CONTINUOUS):]
-    #for i in range(poly.shape[1]):
-    #    all_data['poly_' + str(i + 1)] = poly[:, i]
+#    for i in range(poly.shape[1]):
+#        all_data['poly_' + str(i + 1)] = poly[:, i]
     best_poly_120 = ['poly_64', 'poly_55', 'poly_54', 'poly_57', 'poly_56', 'poly_50', 'poly_52', 'poly_68', 'poly_11', 'poly_10', 'poly_13', 'poly_34', 'poly_15', 'poly_14', 'poly_31', 'poly_16', 'poly_73', 'poly_18', 'poly_75', 'poly_77', 'poly_76', 'poly_39', 'poly_74', 'poly_5', 'poly_4', 'poly_7', 'poly_1', 'poly_3', 'poly_2', 'poly_9', 'poly_12', 'poly_37', 'poly_78', 'poly_35', 'poly_42', 'poly_43', 'poly_40', 'poly_41', 'poly_47', 'poly_45', 'poly_33', 'poly_48', 'poly_49', 'poly_32', 'poly_24', 'poly_25', 'poly_26', 'poly_20', 'poly_21', 'poly_22', 'poly_23', 'poly_30', 'poly_28', 'poly_65', 'poly_66', 'poly_67']
     # T4
     best_poly = ['poly_5', 'poly_13', 'poly_14', 'poly_15']
@@ -1070,6 +1446,8 @@ inf_fold=4, eta=0.05, bez learning_rates, 11 minutes
         print(col, all_data[col].dtype, min(all_data[col]), max(all_data[col]), float(sum(all_data[col] == 0)) / len(all_data[col]))
     return
     """
+
+    all_data = all_data.drop(TO_DROP, axis=1)
 
     # Use -1 for any others
     if imputer is None:
@@ -1170,18 +1548,26 @@ inf_fold=4, eta=0.05, bez learning_rates, 11 minutes
                 fmt=['%d', '%d'],
                 header='"Id","Response"', comments='')
 
-        if not isinstance(clf.xgb, list):
-            xgb_ensemble = [clf.xgb]
-        else:
-            xgb_ensemble = clf.xgb
-        for xgb in xgb_ensemble:
-            importance = xgb.booster().get_fscore()
-            import operator
-            print(sorted(importance.items()), "\n")
-            importance = sorted(importance.items(), key=operator.itemgetter(1), reverse=True)
-            print(importance, "\n")
-            features = [k for k, _ in importance]
-            print(len(features), features)
+#        if not isinstance(clf.xgb, list):
+#            xgb_ensemble = [clf.xgb]
+#        else:
+#            xgb_ensemble = clf.xgb
+#        for xgb in xgb_ensemble:
+#            importance = xgb.booster().get_fscore()
+#            import operator
+#            print(sorted(importance.items()), "\n")
+#            importance = sorted(importance.items(), key=operator.itemgetter(1), reverse=True)
+#            print(importance, "\n")
+#            features = [k for k, _ in importance]
+#            print(len(features), features)
+        feat_imp = clf.feature_importances_
+        nonzero_features = train_X.columns.values[feat_imp > 0.]
+        print("Features with importance != 0",
+              len(nonzero_features),
+              nonzero_features,
+              sorted(zip(feat_imp[feat_imp > 0.], nonzero_features)))
+        zero_features = train_X.columns.values[feat_imp == 0.]
+        print("Features with importance == 0", zero_features)
 
     return
 
