@@ -1249,6 +1249,9 @@ def work(out_csv_file,
 #    all_data[CONTINUOUS] = pca.fit_transform(all_data[CONTINUOUS])
 
 
+    #
+
+
     all_data = OneHot(all_data, NOMINALS_3)
     all_data = OneHot(all_data, NOMINALS_GE4)
     """
@@ -1417,6 +1420,29 @@ grid scores:
   mean: 0.65996, std: 0.00400, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
 best score: 0.65996
 best params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
+
+[min_child_weight]
+grid scores:
+  mean: 0.66052, std: 0.00477, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 200, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
+  mean: 0.65847, std: 0.00664, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 220, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
+  mean: 0.66007, std: 0.00419, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 260, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
+  mean: 0.65942, std: 0.00468, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 280, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
+best score: 0.66052
+best params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 200, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
+[max_depth]
+grid scores:
+  mean: 0.66014, std: 0.00464, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 8, 'gamma': 0.0}
+  mean: 0.66036, std: 0.00431, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 9, 'gamma': 0.0}
+  mean: 0.65935, std: 0.00609, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 11, 'gamma': 0.0}
+  mean: 0.65793, std: 0.00313, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 12, 'gamma': 0.0}
+best score: 0.66036
+best params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 9, 'gamma': 0.0}
+[gamma]
+grid scores:
+  mean: 0.66007, std: 0.00456, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 2.0}
+  mean: 0.66024, std: 0.00436, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 4.0}
+best score: 0.66024
+best params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 4.0}
 
     """
 
