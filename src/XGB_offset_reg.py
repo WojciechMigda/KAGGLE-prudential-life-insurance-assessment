@@ -34,16 +34,6 @@ from __future__ import print_function
 
 DEBUG = False
 
-try:
-    import ml_metrics
-except ImportError:
-    KAGGLE = False
-    pass
-else:
-    DEBUG = True
-    KAGGLE = True
-    pass
-
 __all__ = []
 __version__ = "0.0.1"
 __date__ = '2016-01-22'
@@ -362,9 +352,7 @@ def OneHot(df, colnames):
 
 
 def Kappa(y_true, y_pred, **kwargs):
-    if not KAGGLE:
-        from skll import kappa
-        #from kappa import kappa
+    from skll import kappa
     return kappa(y_true, y_pred, **kwargs)
 
 
@@ -414,8 +402,7 @@ class PrudentialRegressor(BaseEstimator, RegressorMixin):
 
     def fit(self, X, y):
         from xgboost import XGBRegressor
-        if not KAGGLE:
-            from OptimizedOffsetRegressor import DigitizedOptimizedOffsetRegressor
+        from OptimizedOffsetRegressor import DigitizedOptimizedOffsetRegressor
 
         self.xgb = XGBRegressor(
                        objective=self.objective,
@@ -492,8 +479,6 @@ class PrudentialRegressorFO(BaseEstimator, RegressorMixin):
 
     def fit(self, X, y):
         from xgboost import XGBRegressor
-        if not KAGGLE:
-            from OptimizedOffsetRegressor import DigitizedOptimizedOffsetRegressor
 
         self.xgb = XGBRegressor(
                        objective=self.objective,
@@ -569,8 +554,7 @@ class PrudentialRegressorCVO(BaseEstimator, RegressorMixin):
 
     def fit(self, X, y):
         from xgboost import XGBRegressor
-        if not KAGGLE:
-            from OptimizedOffsetRegressor import DigitizedOptimizedOffsetRegressor
+        from OptimizedOffsetRegressor import DigitizedOptimizedOffsetRegressor
 
         #from OptimizedOffsetRegressor import FullDigitizedOptimizedOffsetRegressor
         #self.off = FullDigitizedOptimizedOffsetRegressor(n_buckets=self.n_buckets,
@@ -726,8 +710,7 @@ class PrudentialRegressorCVO2(BaseEstimator, RegressorMixin):
 
 
     def fit(self, X, y):
-        if not KAGGLE:
-            from OptimizedOffsetRegressor import DigitizedOptimizedOffsetRegressor
+        from OptimizedOffsetRegressor import DigitizedOptimizedOffsetRegressor
 
         #from OptimizedOffsetRegressor import FullDigitizedOptimizedOffsetRegressor
         #self.off = FullDigitizedOptimizedOffsetRegressor(n_buckets=self.n_buckets,
@@ -930,8 +913,7 @@ best params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight
         """
 
     def fit(self, X, y):
-        if not KAGGLE:
-            from OptimizedOffsetRegressor import DigitizedOptimizedOffsetRegressor
+        from OptimizedOffsetRegressor import DigitizedOptimizedOffsetRegressor
 
         from sklearn.cross_validation import StratifiedKFold
         kf = StratifiedKFold(y, n_folds=self.int_fold)
@@ -1186,12 +1168,8 @@ def work(out_csv_file,
     from pandas import read_csv
     from numpy import rint,clip,savetxt,stack
 
-    if KAGGLE:
-        train = read_csv("../input/train.csv")
-        test = read_csv("../input/test.csv")
-    else:
-        train = read_csv(ZipFile("../../data/train.csv.zip", 'r').open('train.csv'))
-        test = read_csv(ZipFile("../../data/test.csv.zip", 'r').open('test.csv'))
+    train = read_csv(ZipFile("../../data/train.csv.zip", 'r').open('train.csv'))
+    test = read_csv(ZipFile("../../data/test.csv.zip", 'r').open('test.csv'))
 
 #    gmm17_train = read_csv('GMM_17_full_train.csv')
 #    gmm17_test = read_csv('GMM_17_full_test.csv')
@@ -1504,9 +1482,9 @@ best params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight
     poly = poly[:, len(CONTINUOUS):]
 #    for i in range(poly.shape[1]):
 #        all_data['poly_' + str(i + 1)] = poly[:, i]
-    best_poly_120 = ['poly_64', 'poly_55', 'poly_54', 'poly_57', 'poly_56', 'poly_50', 'poly_52', 'poly_68', 'poly_11', 'poly_10', 'poly_13', 'poly_34', 'poly_15', 'poly_14', 'poly_31', 'poly_16', 'poly_73', 'poly_18', 'poly_75', 'poly_77', 'poly_76', 'poly_39', 'poly_74', 'poly_5', 'poly_4', 'poly_7', 'poly_1', 'poly_3', 'poly_2', 'poly_9', 'poly_12', 'poly_37', 'poly_78', 'poly_35', 'poly_42', 'poly_43', 'poly_40', 'poly_41', 'poly_47', 'poly_45', 'poly_33', 'poly_48', 'poly_49', 'poly_32', 'poly_24', 'poly_25', 'poly_26', 'poly_20', 'poly_21', 'poly_22', 'poly_23', 'poly_30', 'poly_28', 'poly_65', 'poly_66', 'poly_67']
+#    best_poly_120 = ['poly_64', 'poly_55', 'poly_54', 'poly_57', 'poly_56', 'poly_50', 'poly_52', 'poly_68', 'poly_11', 'poly_10', 'poly_13', 'poly_34', 'poly_15', 'poly_14', 'poly_31', 'poly_16', 'poly_73', 'poly_18', 'poly_75', 'poly_77', 'poly_76', 'poly_39', 'poly_74', 'poly_5', 'poly_4', 'poly_7', 'poly_1', 'poly_3', 'poly_2', 'poly_9', 'poly_12', 'poly_37', 'poly_78', 'poly_35', 'poly_42', 'poly_43', 'poly_40', 'poly_41', 'poly_47', 'poly_45', 'poly_33', 'poly_48', 'poly_49', 'poly_32', 'poly_24', 'poly_25', 'poly_26', 'poly_20', 'poly_21', 'poly_22', 'poly_23', 'poly_30', 'poly_28', 'poly_65', 'poly_66', 'poly_67']
     # T4
-    best_poly = ['poly_5', 'poly_13', 'poly_14', 'poly_15']
+#    best_poly = ['poly_5', 'poly_13', 'poly_14', 'poly_15']
     #for n in best_poly:
     #    all_data[n] = poly[:, int(n[5:]) - 1]
     # 3x3
