@@ -1401,6 +1401,16 @@ grid scores:
 best score: 0.66047
 best params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
 
++3x3
+grid scores:
+  mean: 0.66017, std: 0.00497, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
+best score: 0.66017
+
+bez BMI_Age
+grid scores:
+  mean: 0.65855, std: 0.00260, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
+best score: 0.65855
+best params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
 
     """
 
