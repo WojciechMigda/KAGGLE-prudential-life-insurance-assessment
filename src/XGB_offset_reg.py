@@ -349,25 +349,6 @@ TO_DROP = ['Medical_Keyword_13', 'Product_Info_7_2', 'InsuredInfo_1_3',
  'Medical_History_2_626', 'Medical_History_2_627', 'Medical_History_2_628']
 
 
-
-def CSV_w_coro():
-    with open('xgbgen.csv', 'w') as f:
-        while True:
-            arr = yield
-            f.write(','.join([str(x) for x in arr]) + '\n')
-    pass
-#it = CSV_w_coro()
-#next(it)
-
-def CSV_r_coro():
-    with open('xgbgen.csv', 'r') as f:
-        lines = f.readlines()
-        for l in lines:
-            from numpy import asarray
-            yield asarray(l.strip().split(','))
-it = CSV_r_coro()
-
-
 def OneHot(df, colnames):
     from pandas import get_dummies, concat
     for col in colnames:
@@ -1202,7 +1183,7 @@ def work(out_csv_file,
 
 
     from zipfile import ZipFile
-    from pandas import read_csv,factorize
+    from pandas import read_csv
     from numpy import rint,clip,savetxt,stack
 
     if KAGGLE:
@@ -1229,6 +1210,11 @@ def work(out_csv_file,
 #    #all_data = all_data.join(G_vectors.drop(['G3'], axis=1))
 #    all_data = all_data.join(
 #        G_vectors[['G8', 'G11', 'G12', 'G13', 'G17', 'G18', 'G19', 'G20']])
+#    all_data['G11'] = G_vectors['G11']
+#    all_data = OneHot(all_data, ['G11'])
+#    all_data['G12'] = G_vectors['G12']
+#    all_data = OneHot(all_data, ['G12'])
+
 
     from sklearn.preprocessing import Imputer
     imp = Imputer(missing_values='NaN', strategy='median', axis=0)
@@ -1263,21 +1249,8 @@ def work(out_csv_file,
 #    all_data[CONTINUOUS] = pca.fit_transform(all_data[CONTINUOUS])
 
 
-    # create any new variables
-#    all_data['Product_Info_2_char'] = all_data.Product_Info_2.str[0]
-#    all_data['Product_Info_2_num'] = all_data.Product_Info_2.str[1]
-
-
-    # factorize categorical variables
-#    all_data['Product_Info_2'] = factorize(all_data['Product_Info_2'])[0]# + 1
-#    all_data['Product_Info_2_char'] = factorize(all_data['Product_Info_2_char'])[0]# + 1
-#    all_data['Product_Info_2_num'] = factorize(all_data['Product_Info_2_num'])[0]# + 1
-
-    #all_data = all_data.drop(NOMINALS_3, axis=1)
     all_data = OneHot(all_data, NOMINALS_3)
     all_data = OneHot(all_data, NOMINALS_GE4)
-    #all_data = OneHot(all_data, NOMINALS_GE4[:-1])
-    #all_data = all_data.drop(NOMINALS_GE4[-1:], axis=1)
     """
 all_data = all_data.drop(NOMINALS_GE4, axis=1)
 all_data = OneHot(all_data, NOMINALS_3)
@@ -1412,6 +1385,39 @@ grid scores:
 best score: 0.65855
 best params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
 
++ G12
+grid scores:
+  mean: 0.66070, std: 0.00405, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
+best score: 0.66070
+best params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
++ G8
+grid scores:
+  mean: 0.66046, std: 0.00426, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
+best score: 0.66046
+best params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
+
++ G11
+grid scores:
+  mean: 0.66096, std: 0.00448, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
+best score: 0.66096
+best params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
++G13
+grid scores:
+  mean: 0.66004, std: 0.00471, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
+best score: 0.66004
+best params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
++G18
+grid scores:
+  mean: 0.66057, std: 0.00377, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
+best score: 0.66057
+best params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
+
++G11,12
+grid scores:
+  mean: 0.65996, std: 0.00400, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
+best score: 0.65996
+best params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
+
     """
 
     """
@@ -1441,22 +1447,6 @@ best params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight
     #all_data['MH1_MKC'] = all_data['Medical_History_1'] * all_data['Med_Keywords_Count']
     #all_data['BMI_MKC'] = all_data['BMI'] * all_data['Med_Keywords_Count']
 
-    """
-    print('BOOLEANS:')
-    for col in all_data[BOOLEANS]:
-        print(col, all_data[col].dtype, min(all_data[col]), max(all_data[col]), float(sum(all_data[col] == 0)) / len(all_data[col]))
-    print('DISCRETE:')
-    for col in all_data[DISCRETE]:
-        print(col, all_data[col].dtype, min(all_data[col]), max(all_data[col]), float(sum(all_data[col] == 0)) / len(all_data[col]))
-    print('CONTINUOUS:')
-    for col in all_data[CONTINUOUS]:
-        print(col, all_data[col].dtype, min(all_data[col]), max(all_data[col]), float(sum(all_data[col] == 0)) / len(all_data[col]))
-    print('NOMINALS:')
-    for col in all_data[NOMINALS]:
-        print(col, all_data[col].dtype, min(all_data[col]), max(all_data[col]), float(sum(all_data[col] == 0)) / len(all_data[col]))
-    return
-    """
-
     all_data = all_data.drop(TO_DROP, axis=1)
 
     # Use -1 for any others
@@ -1472,7 +1462,6 @@ best params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight
     train = all_data[all_data['Response'] > 0].copy()
     test = all_data[all_data['Response'] < 1].copy()
 
-    #dropped_cols = ['Id', 'Response', 'Medical_History_10', 'Medical_History_24']#, 'Medical_History_32']
     dropped_cols = ['Id', 'Response']
 
     train_y = train['Response'].values
