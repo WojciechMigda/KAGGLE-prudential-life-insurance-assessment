@@ -1249,7 +1249,15 @@ def work(out_csv_file,
 #    all_data[CONTINUOUS] = pca.fit_transform(all_data[CONTINUOUS])
 
 
-    #
+#    from scipy.stats.mstats import mquantiles
+#    to_quant = ['Employment_Info_1', 'BMI', 'Ins_Age', 'Employment_Info_6', 'Product_Info_4']
+#    for col in to_quant:
+#        from numpy import linspace,digitize
+#        splits = mquantiles(all_data[col], linspace(0., 1., 16, endpoint=False)[1:])
+#        foo = digitize(all_data[col], splits)
+#        all_data[col + '_q'] = foo
+#        pass
+#    all_data = OneHot(all_data, [col + '_q' for col in to_quant])
 
 
     all_data = OneHot(all_data, NOMINALS_3)
@@ -1377,6 +1385,13 @@ grid scores:
 best score: 0.66047
 best params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
 
+nbuckets=8
+grid scores:
+  mean: 0.66048, std: 0.00448, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
+best score: 0.66048
+best params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
+
+
 +3x3
 grid scores:
   mean: 0.66017, std: 0.00497, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
@@ -1443,6 +1458,32 @@ grid scores:
   mean: 0.66024, std: 0.00436, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 4.0}
 best score: 0.66024
 best params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 4.0}
+
+
+quant,
+grid scores:
+  mean: 0.66015, std: 0.00447, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
+best score: 0.66015
+
+
+Q 10, 8 buckets, ['Employment_Info_1', 'BMI', 'Ins_Age', 'Employment_Info_6', 'Product_Info_4']
+grid scores:
+  mean: 0.65939, std: 0.00431, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
+best score: 0.65939
+best params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
+
+Q 10, 9 buckets, ['Employment_Info_1', 'BMI', 'Ins_Age', 'Employment_Info_6', 'Product_Info_4']
+grid scores:
+  mean: 0.65833, std: 0.00657, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
+best score: 0.65833
+best params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
+
+Q 16, 8 buckets, ['Employment_Info_1', 'BMI', 'Ins_Age', 'Employment_Info_6', 'Product_Info_4']
+grid scores:
+  mean: 0.65954, std: 0.00403, params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
+best score: 0.65954
+best params: {'colsample_bytree': 0.67, 'learning_rate': 0.03, 'min_child_weight': 240, 'n_estimators': 700, 'subsample': 0.9, 'int_fold': 7, 'max_depth': 10, 'gamma': 0.0}
+
 
     """
 
